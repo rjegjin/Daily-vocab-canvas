@@ -1,0 +1,57 @@
+name: Update Learned Words via Issue
+
+on:
+  issues:
+    types: [opened, edited]
+
+jobs:
+  update-words:
+    if: contains(github.event.issue.labels.*.name, 'update-words')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Run update script
+      env:
+        ISSUE_TITLE: ${{ github.event.issue.title }}
+        ISSUE_BODY: ${{ github.event.issue.body }}
+      run: python tools/issue_to_words.py
+
+    - name: Commit and push changes
+      run: |
+        git config --global user.name 'github-actions[bot]'
+        git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+        git add learned_words.txt
+        if ! git diff --staged --quiet; then
+          git commit -m "chore: add words from issue #${{ github.event.issue.number }} [skip ci]"
+          git push
+        else
+          echo "No new words to add."
+        fi
+
+    - name: Add comment to issue
+      uses: actions/github-script@v7
+      with:
+        script: |
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: '✅ 단어 목록이 성공적으로 업데이트되었습니다! (learned_words.txt 반영 완료)'
+          })
+          github.rest.issues.update({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            state: 'closed'
+          })

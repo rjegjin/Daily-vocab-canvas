@@ -43,7 +43,7 @@ def save_learned_words(new_words):
             f.write(w + '\n')
 
 # -------------------------------------------------------------------
-# 2. 단어 데이터 (JSON) 생성 (Gemini 3.0 Flash)
+# 2. 단어 데이터 (JSON) 생성 (Gemini 3 Flash Preview)
 # -------------------------------------------------------------------
 def generate_vocab_data(learned_words):
     print("🧠 Gemini 모델을 통해 오늘의 단어 데이터를 생성 중...")
@@ -68,9 +68,12 @@ def generate_vocab_data(learned_words):
     Output strictly valid JSON. No markdown formatting, just the raw JSON array.
     """
     
+    # [수정] 정확한 모델명 반영: gemini-3-flash-preview
+    target_model = 'gemini-3-flash-preview'
+    
     try:
         response = client.models.generate_content(
-            model='gemini-3.0-flash', # User specified 3.0
+            model=target_model,
             contents=prompt
         )
         
@@ -85,7 +88,7 @@ def generate_vocab_data(learned_words):
         print(f"✅ 9개의 단어 데이터 생성 완료: {[v['word'] for v in vocab_list]}")
         return vocab_list
     except Exception as e:
-        print(f"⚠️ Gemini 3.0 모델 오류 또는 파싱 실패: {e}. 2.0으로 폴백 시도...")
+        print(f"⚠️ {target_model} 모델 오류 또는 파싱 실패: {e}. 2.0으로 폴백 시도...")
         try:
             response = client.models.generate_content(
                 model='gemini-2.0-flash',
@@ -108,7 +111,6 @@ def generate_background_grid(vocab_data):
     
     image_path = os.path.join(PROJECT_DIR, "raw_background.png")
     
-    # 각 단어에 맞춘 묘사를 포함하여 프롬프트 구성 (단순화 및 일관성 강조)
     illustrations_desc = []
     for i, item in enumerate(vocab_data):
         illustrations_desc.append(f"Cell {i+1}: '{item['word']}'")
@@ -156,18 +158,15 @@ def overlay_text_on_image(bg_image_path, vocab_data):
     print("🖋️ 생성된 이미지 위에 텍스트를 합성하는 중...")
     
     try:
-        # 배경 로드 (RGBA)
         raw_bg = Image.open(bg_image_path).convert("RGBA")
         img_w, img_h = raw_bg.size
         
-        # 완벽한 3x3 그리드를 위한 새로운 레이어 생성
         final_canvas = Image.new("RGBA", (img_w, img_h), (255, 255, 255, 255))
         draw = ImageDraw.Draw(final_canvas)
         
         cell_w = img_w // 3
         cell_h = img_h // 3
         
-        # 폰트 설정
         font_dir = os.path.dirname(os.path.abspath(__file__))
         bold_font_path = os.path.join(font_dir, "NotoSansKR-Bold.ttf")
         reg_font_path = os.path.join(font_dir, "NotoSansKR-Regular.ttf")
@@ -186,19 +185,13 @@ def overlay_text_on_image(bg_image_path, vocab_data):
             x0 = col * cell_w
             y0 = row * cell_h
             
-            # 1. 원본 이미지에서 해당 셀의 하단 절반만 추출하여 합성 (위쪽은 화이트박스로 덮음)
-            # AI가 그린 그리드가 부정확할 수 있으므로, 각 셀 중앙에서 안전하게 크롭
             icon_area = (x0, y0 + cell_h // 2, x0 + cell_w, y0 + cell_h)
             icon_img = raw_bg.crop(icon_area)
             final_canvas.paste(icon_img, (x0, y0 + cell_h // 2))
             
-            # 2. 상단 텍스트 영역 (순백색 고정)
             draw.rectangle([x0, y0, x0 + cell_w, y0 + cell_h // 2], fill=(255, 255, 255, 255))
-            
-            # 3. 셀 테두리 (깔끔한 현대적 느낌의 아주 연한 회색)
             draw.rectangle([x0, y0, x0 + cell_w, y0 + cell_h], outline=(230, 230, 230, 255), width=1)
             
-            # 중앙 정렬 텍스트 함수
             def draw_centered(y_offset, text, font, fill=(0, 0, 0, 255)):
                 bbox = draw.textbbox((0, 0), text, font=font)
                 w = bbox[2] - bbox[0]
@@ -211,7 +204,6 @@ def overlay_text_on_image(bg_image_path, vocab_data):
                     draw_centered(curr_y, line, font, fill)
                     curr_y += 24
             
-            # 텍스트 배치
             draw_centered(25, item['word'], font_word, fill=(0, 0, 0, 255))
             draw_centered(75, item['ipa'], font_ipa, fill=(120, 120, 120, 255))
             draw_centered(105, item['meaning'], font_meaning, fill=(20, 20, 20, 255))
@@ -228,13 +220,12 @@ def overlay_text_on_image(bg_image_path, vocab_data):
         return None
 
 # -------------------------------------------------------------------
-# 5. 텔레그램으로 전송 (DNS 우회 패치 포함)
+# 5. 텔레그램으로 전송
 # -------------------------------------------------------------------
 def send_to_telegram(image_path):
     print("📤 텔레그램으로 이미지를 전송하는 중...")
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendPhoto"
     
-    # DNS 우회 패치 (일부 환경용)
     import urllib3
     from urllib3.util.ssl_ import create_urllib3_context
     class CustomHostAdapter(requests.adapters.HTTPAdapter):
