@@ -43,7 +43,7 @@ def save_learned_words(new_words):
             f.write(w + '\n')
 
 # -------------------------------------------------------------------
-# 2. 단어 데이터 (JSON) 생성 (Gemini 2.5 Flash)
+# 2. 단어 데이터 (JSON) 생성 (Gemini 3.0 Flash)
 # -------------------------------------------------------------------
 def generate_vocab_data(learned_words):
     print("🧠 Gemini 모델을 통해 오늘의 단어 데이터를 생성 중...")
@@ -55,58 +55,76 @@ def generate_vocab_data(learned_words):
         exclude_text = f"CRITICAL: DO NOT use any of these words: {', '.join(recent_learned)}."
 
     prompt = f"""
-    Create a JSON array of 9 Spanish vocabulary words related to 'emotions' or 'personality traits'.
+    Create a JSON array of 9 Spanish vocabulary words for daily learning.
+    Provide a mix of categories (emotions, nature, objects, actions, etc.).
     {exclude_text}
     
     For each word, provide:
-    - "word": The Spanish word (e.g., "Feliz")
-    - "ipa": The IPA pronunciation (e.g., "[feˈlis]")
-    - "meaning": The Korean meaning (e.g., "행복한")
+    - "word": The Spanish word (e.g., "Girasol")
+    - "ipa": The IPA pronunciation (e.g., "[xiɾaˈsol]")
+    - "meaning": The Korean meaning (e.g., "해바라기")
     - "example": A short, simple Spanish example sentence.
     
     Output strictly valid JSON. No markdown formatting, just the raw JSON array.
     """
     
-    response = client.models.generate_content(
-        model='gemini-2.5-flash',
-        contents=prompt
-    )
-    
-    # Clean up markdown if model still outputs it
-    raw_text = response.text.strip()
-    if raw_text.startswith("```json"):
-        raw_text = raw_text[7:]
-    if raw_text.endswith("```"):
-        raw_text = raw_text[:-3]
-        
     try:
+        response = client.models.generate_content(
+            model='gemini-3.0-flash', # User specified 3.0
+            contents=prompt
+        )
+        
+        # Clean up markdown if model still outputs it
+        raw_text = response.text.strip()
+        if raw_text.startswith("```json"):
+            raw_text = raw_text[7:]
+        if raw_text.endswith("```"):
+            raw_text = raw_text[:-3]
+            
         vocab_list = json.loads(raw_text.strip())
         print(f"✅ 9개의 단어 데이터 생성 완료: {[v['word'] for v in vocab_list]}")
         return vocab_list
-    except json.JSONDecodeError as e:
-        print(f"❌ JSON 파싱 오류: {e}\n{raw_text}")
-        return None
+    except Exception as e:
+        print(f"⚠️ Gemini 3.0 모델 오류 또는 파싱 실패: {e}. 2.0으로 폴백 시도...")
+        try:
+            response = client.models.generate_content(
+                model='gemini-2.0-flash',
+                contents=prompt
+            )
+            raw_text = response.text.strip()
+            if raw_text.startswith("```json"): raw_text = raw_text[7:]
+            if raw_text.endswith("```"): raw_text = raw_text[:-3]
+            vocab_list = json.loads(raw_text.strip())
+            return vocab_list
+        except Exception as e2:
+            print(f"❌ Gemini 2.0 폴백도 실패: {e2}")
+            return None
 
 # -------------------------------------------------------------------
 # 3. 배경 일러스트 생성 (Imagen 4)
 # -------------------------------------------------------------------
-def generate_background_grid():
+def generate_background_grid(vocab_data):
     print("🎨 Imagen 4 모델을 통해 텍스트 없는 3x3 일러스트 그리드 생성 중...")
     
-    image_path = "raw_background.png"
+    image_path = os.path.join(PROJECT_DIR, "raw_background.png")
     
-    prompt_text = """
-    Create a strictly separated 3x3 grid image (square aspect ratio, exactly 1080x1080).
-    There should be NO TEXT, NO LETTERS, NO WORDS in the image.
+    # 각 단어에 맞춘 묘사를 포함하여 프롬프트 구성 (단순화 및 일관성 강조)
+    illustrations_desc = []
+    for i, item in enumerate(vocab_data):
+        illustrations_desc.append(f"Cell {i+1}: '{item['word']}'")
+
+    prompt_text = f"""
+    Create a strict 3x3 grid of 9 minimalist illustrations.
+    Style: Simple, clean, modern 2D vector flat design icons. 
+    Aesthetic: Consistent line weight, vibrant but soft colors, isolated subjects on a solid WHITE background.
+    Layout: 9 equal square cells. NO TEXT, NO BORDERS, NO WATERMARKS.
     
-    Layout rules:
-    - Strict 3x3 grid layout dividing the image into 9 equal square cells.
-    - Each cell must have a clean, solid white area at the top half for later text placement.
-    - The bottom half of each cell must contain a beautiful, high-quality illustration representing a different emotion.
-    - The 9 illustrations must be very diverse in style: mix photorealistic, cinematic, 3D render, high-quality digital art, anime, pop art, watercolor, claymation, etc.
-    - Solid, clean separation lines between the cells. No external borders.
+    Subjects:
+    {', '.join(illustrations_desc)}
     
-    Remember: Absolutely NO text or typography. Just the layout and the diverse illustrations at the bottom of each cell.
+    Instructions: Each subject should be centered within its respective cell. 
+    The top half of each cell MUST be left as empty white space for text overlay.
+    Maintain high quality and professional layout.
     """
     
     try:
@@ -138,69 +156,69 @@ def overlay_text_on_image(bg_image_path, vocab_data):
     print("🖋️ 생성된 이미지 위에 텍스트를 합성하는 중...")
     
     try:
-        img = Image.open(bg_image_path).convert("RGBA")
-        draw = ImageDraw.Draw(img)
+        # 배경 로드 (RGBA)
+        raw_bg = Image.open(bg_image_path).convert("RGBA")
+        img_w, img_h = raw_bg.size
         
-        # 폰트 설정 (OTF 파일 로드)
-        font_dir = os.path.dirname(os.path.abspath(__file__))
-        bold_font_path = os.path.join(font_dir, "NotoSansKR-Bold.ttf")
-        reg_font_path = os.path.join(font_dir, "NotoSansKR-Regular.ttf")
-        ipa_font_path = os.path.join(font_dir, "NotoSans-Regular.ttf") # IPA 특수문자 지원 폰트
+        # 완벽한 3x3 그리드를 위한 새로운 레이어 생성
+        final_canvas = Image.new("RGBA", (img_w, img_h), (255, 255, 255, 255))
+        draw = ImageDraw.Draw(final_canvas)
         
-        font_word = ImageFont.truetype(bold_font_path, 42)
-        font_ipa = ImageFont.truetype(ipa_font_path, 26) # IPA 전용 폰트 적용
-        font_meaning = ImageFont.truetype(bold_font_path, 28)
-        font_example = ImageFont.truetype(reg_font_path, 20)
-        
-        img_w, img_h = img.size
         cell_w = img_w // 3
         cell_h = img_h // 3
         
-        # 각 셀에 텍스트 그리기
+        # 폰트 설정
+        font_dir = os.path.dirname(os.path.abspath(__file__))
+        bold_font_path = os.path.join(font_dir, "NotoSansKR-Bold.ttf")
+        reg_font_path = os.path.join(font_dir, "NotoSansKR-Regular.ttf")
+        ipa_font_path = os.path.join(font_dir, "NotoSans-Regular.ttf")
+        
+        font_word = ImageFont.truetype(bold_font_path, 40)
+        font_ipa = ImageFont.truetype(ipa_font_path, 24)
+        font_meaning = ImageFont.truetype(bold_font_path, 28)
+        font_example = ImageFont.truetype(reg_font_path, 18)
+        
         for i, item in enumerate(vocab_data):
             if i >= 9: break
             
             row = i // 3
             col = i % 3
-            
-            # 셀의 시작 좌표 (좌상단)
             x0 = col * cell_w
             y0 = row * cell_h
             
-            # 중앙 정렬을 위한 헬퍼 함수
-            def draw_centered_text(y_offset, text, font, fill_color=(0, 0, 0, 255)):
+            # 1. 원본 이미지에서 해당 셀의 하단 절반만 추출하여 합성 (위쪽은 화이트박스로 덮음)
+            # AI가 그린 그리드가 부정확할 수 있으므로, 각 셀 중앙에서 안전하게 크롭
+            icon_area = (x0, y0 + cell_h // 2, x0 + cell_w, y0 + cell_h)
+            icon_img = raw_bg.crop(icon_area)
+            final_canvas.paste(icon_img, (x0, y0 + cell_h // 2))
+            
+            # 2. 상단 텍스트 영역 (순백색 고정)
+            draw.rectangle([x0, y0, x0 + cell_w, y0 + cell_h // 2], fill=(255, 255, 255, 255))
+            
+            # 3. 셀 테두리 (깔끔한 현대적 느낌의 아주 연한 회색)
+            draw.rectangle([x0, y0, x0 + cell_w, y0 + cell_h], outline=(230, 230, 230, 255), width=1)
+            
+            # 중앙 정렬 텍스트 함수
+            def draw_centered(y_offset, text, font, fill=(0, 0, 0, 255)):
                 bbox = draw.textbbox((0, 0), text, font=font)
-                text_w = bbox[2] - bbox[0]
-                x_pos = x0 + (cell_w - text_w) // 2
-                y_pos = y0 + y_offset
-                draw.text((x_pos, y_pos), text, font=font, fill=fill_color)
+                w = bbox[2] - bbox[0]
+                draw.text((x0 + (cell_w - w) // 2, y0 + y_offset), text, font=font, fill=fill)
             
-            # 긴 예문 자동 줄바꿈 헬퍼 함수
-            def draw_wrapped_centered_text(y_offset, text, font, fill_color=(0, 0, 0, 255), max_width_chars=30):
-                lines = textwrap.wrap(text, width=max_width_chars)
-                current_y = y_offset
+            def draw_wrapped_centered(y_offset, text, font, fill=(80, 80, 80, 255)):
+                lines = textwrap.wrap(text, width=28)
+                curr_y = y_offset
                 for line in lines:
-                    draw_centered_text(current_y, line, font, fill_color)
-                    # 행간 계산
-                    bbox = draw.textbbox((0, 0), line, font=font)
-                    line_h = bbox[3] - bbox[1]
-                    current_y += line_h + 5
+                    draw_centered(curr_y, line, font, fill)
+                    curr_y += 24
             
-            # 텍스트 배치 (위쪽 하얀 여백에 촘촘하게 배치되도록 Y 좌표 조정)
-            # 셀 하나의 높이(cell_h)는 360px. 절반(180px)까지가 하얀 여백이라 가정.
-            draw_centered_text(15, f"[{item['word']}]", font_word)
-            draw_centered_text(70, item['ipa'], font_ipa, fill_color=(100, 100, 100, 255))
-            draw_centered_text(110, item['meaning'], font_meaning)
+            # 텍스트 배치
+            draw_centered(25, item['word'], font_word, fill=(0, 0, 0, 255))
+            draw_centered(75, item['ipa'], font_ipa, fill=(120, 120, 120, 255))
+            draw_centered(105, item['meaning'], font_meaning, fill=(20, 20, 20, 255))
+            draw_wrapped_centered(140, item['example'], font_example)
             
-            # 예문은 흰 배경의 하단부(그림 바로 위)에 위치하도록.
-            draw_wrapped_centered_text(145, item['example'], font_example, fill_color=(50, 50, 50, 255), max_width_chars=32)
-            
-        final_path = "final_flashcard.png"
-        
-        # 합성된 이미지를 하얀색 배경으로 저장 (RGBA -> RGB)
-        background = Image.new("RGB", img.size, (255, 255, 255))
-        background.paste(img, mask=img.split()[3]) # alpha 채널을 마스크로 사용
-        background.save(final_path, "PNG")
+        final_path = os.path.join(PROJECT_DIR, "final_flashcard.png")
+        final_canvas.convert("RGB").save(final_path, "PNG", quality=95)
         
         print(f"✅ 최종 합성 완료: {final_path}")
         return final_path
@@ -210,17 +228,30 @@ def overlay_text_on_image(bg_image_path, vocab_data):
         return None
 
 # -------------------------------------------------------------------
-# 5. 텔레그램으로 전송
+# 5. 텔레그램으로 전송 (DNS 우회 패치 포함)
 # -------------------------------------------------------------------
 def send_to_telegram(image_path):
     print("📤 텔레그램으로 이미지를 전송하는 중...")
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendPhoto"
     
+    # DNS 우회 패치 (일부 환경용)
+    import urllib3
+    from urllib3.util.ssl_ import create_urllib3_context
+    class CustomHostAdapter(requests.adapters.HTTPAdapter):
+        def send(self, request, **kwargs):
+            request.url = request.url.replace("api.telegram.org", "149.154.167.220")
+            request.headers["Host"] = "api.telegram.org"
+            return super(CustomHostAdapter, self).send(request, **kwargs)
+    
+    session = requests.Session()
+    session.mount("https://", CustomHostAdapter())
+    session.verify = False 
+    
     try:
         with open(image_path, 'rb') as photo:
             payload = {'chat_id': CHAT_ID}
             files = {'photo': photo}
-            response = requests.post(url, data=payload, files=files)
+            response = session.post(url, data=payload, files=files)
             
         result = response.json()
         if result.get("ok"):
@@ -234,32 +265,22 @@ def send_to_telegram(image_path):
 # 메인 실행 흐름
 # -------------------------------------------------------------------
 if __name__ == "__main__":
-    print(f"=== 🌟 Daily Vocab Card Generator (Pipeline Mode) 시작 ({datetime.now().strftime('%Y-%m-%d %H:%M:%S')}) ===")
+    print(f"=== 🌟 Daily Vocab Card Generator 시작 ({datetime.now().strftime('%Y-%m-%d %H:%M:%S')}) ===")
     
-    # 0. 기존 학습 단어 로드
     learned_words = load_learned_words()
     print(f"📚 지금까지 학습한 단어 수: {len(learned_words)}개")
 
-    # 1. 단어 데이터 (JSON) 생성
     vocab_data = generate_vocab_data(learned_words)
-    if not vocab_data:
-        exit(1)
+    if not vocab_data: exit(1)
         
-    # 2. 텍스트 없는 배경 일러스트 생성
-    bg_image = generate_background_grid()
-    if not bg_image:
-        exit(1)
+    bg_image = generate_background_grid(vocab_data)
+    if not bg_image: exit(1)
         
-    # 3. 이미지 위에 완벽한 폰트로 텍스트 타이핑
     final_img = overlay_text_on_image(bg_image, vocab_data)
     
-    # 4. 전송
     if final_img and os.path.exists(final_img):
         send_to_telegram(final_img)
-        
-        # 성공적으로 전송된 단어를 DB에 기록
-        new_words = [item['word'] for item in vocab_data]
-        save_learned_words(new_words)
-        print("💾 새로운 단어 9개가 learned_words.txt에 저장되었습니다.")
+        save_learned_words([item['word'] for item in vocab_data])
+        print("💾 새로운 단어 9개가 저장되었습니다.")
     else:
         print("⚠️ 최종 이미지가 생성되지 않아 전송을 건너뜁니다.")
