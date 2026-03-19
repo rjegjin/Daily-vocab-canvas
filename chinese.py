@@ -90,11 +90,12 @@ def generate_vocab(learned):
         try:
             r = client.models.generate_content(model=model, contents=prompt)
             data = parse(r)
+            u = r.usage_metadata
             print(f"✅ 단어 9개 생성 완료 ({model}): {[d['word'] for d in data]}")
-            return data
+            return data, u.prompt_token_count, u.candidates_token_count
         except Exception as e:
             print(f"⚠️ {model} 실패: {e}")
-    return None
+    return None, 0, 0
 
 # -------------------------------------------------------------------
 # 메인
@@ -105,10 +106,11 @@ if __name__ == "__main__":
     learned = load_learned()
     print(f"📚 학습한 단어: {len(learned)}개")
 
-    vocab = generate_vocab(learned)
+    vocab, txt_in, txt_out = generate_vocab(learned)
     if not vocab: exit(1)
 
-    icons = generate_icons(client, vocab, lang_hint="Chinese")
+    icons = generate_icons(client, vocab, lang='zh', lang_hint='Chinese',
+                           txt_in_tokens=txt_in, txt_out_tokens=txt_out)
 
     fonts = load_fonts()
     out = os.path.join(PROJECT_DIR, "flashcard_zh.png")
