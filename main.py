@@ -68,39 +68,31 @@ def generate_vocab_data(learned_words):
     Output strictly valid JSON. No markdown formatting, just the raw JSON array.
     """
     
-    # [수정] 정확한 모델명 반영: gemini-3-flash-preview
-    target_model = 'gemini-3-flash-preview'
-    
-    try:
-        response = client.models.generate_content(
-            model=target_model,
-            contents=prompt
-        )
-        
-        # Clean up markdown if model still outputs it
+    target_model = 'gemini-3.1-flash-lite-preview'
+    fallback_model = 'gemini-2.5-flash'
+
+    def parse_response(response):
         raw_text = response.text.strip()
         if raw_text.startswith("```json"):
             raw_text = raw_text[7:]
         if raw_text.endswith("```"):
             raw_text = raw_text[:-3]
-            
-        vocab_list = json.loads(raw_text.strip())
-        print(f"✅ 9개의 단어 데이터 생성 완료: {[v['word'] for v in vocab_list]}")
+        return json.loads(raw_text.strip())
+
+    try:
+        response = client.models.generate_content(model=target_model, contents=prompt)
+        vocab_list = parse_response(response)
+        print(f"✅ 9개의 단어 데이터 생성 완료 ({target_model}): {[v['word'] for v in vocab_list]}")
         return vocab_list
     except Exception as e:
-        print(f"⚠️ {target_model} 모델 오류 또는 파싱 실패: {e}. 2.0으로 폴백 시도...")
+        print(f"⚠️ {target_model} 오류: {e}. {fallback_model}으로 폴백...")
         try:
-            response = client.models.generate_content(
-                model='gemini-2.0-flash',
-                contents=prompt
-            )
-            raw_text = response.text.strip()
-            if raw_text.startswith("```json"): raw_text = raw_text[7:]
-            if raw_text.endswith("```"): raw_text = raw_text[:-3]
-            vocab_list = json.loads(raw_text.strip())
+            response = client.models.generate_content(model=fallback_model, contents=prompt)
+            vocab_list = parse_response(response)
+            print(f"✅ 폴백 성공 ({fallback_model}): {[v['word'] for v in vocab_list]}")
             return vocab_list
         except Exception as e2:
-            print(f"❌ Gemini 2.0 폴백도 실패: {e2}")
+            print(f"❌ 폴백도 실패: {e2}")
             return None
 
 # -------------------------------------------------------------------
