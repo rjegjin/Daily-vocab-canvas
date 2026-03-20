@@ -14,9 +14,9 @@ from card_engine import generate_icons, create_flashcard, send_to_telegram
 # -------------------------------------------------------------------
 # 환경 변수
 # -------------------------------------------------------------------
-BASE_DIR    = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-PROJECT_DIR = os.path.join(BASE_DIR, 'Daily_Vocab_Card_Bot')
-load_dotenv(os.path.join(BASE_DIR, '.secrets', '.env'))
+PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
+load_dotenv(os.path.join(PROJECT_DIR, '.env'))
+load_dotenv(os.path.join(os.path.dirname(PROJECT_DIR), '.secrets', '.env'))
 
 TOKEN   = os.getenv('VOCAB_BOT_TOKEN') or os.getenv('GEMINI_BOT_TOKEN')
 CHAT_ID = os.getenv('VOCAB_CHAT_ID')   or os.getenv('GEMINI_CHAT_ID')
