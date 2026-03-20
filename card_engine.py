@@ -59,8 +59,8 @@ def log_cost(lang, img_in_tokens, img_out_tokens, txt_in_tokens=0, txt_out_token
         'cost_usd': round(cost, 4),
     }
 
-    # 오늘 전체 합계
-    daily_total = sum(v['cost_usd'] for v in log[today].values())
+    # 오늘 전체 합계 (_daily_total_usd는 float이므로 dict만 필터링)
+    daily_total = sum(v['cost_usd'] for v in log[today].values() if isinstance(v, dict) and 'cost_usd' in v)
     log[today]['_daily_total_usd'] = round(daily_total, 4)
 
     with open(cost_log_path, 'w') as f:
