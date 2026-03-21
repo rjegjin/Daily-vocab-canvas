@@ -124,3 +124,12 @@ Computadora
 Entender
 Zapatos
 Trabajar
+Caminar
+Bicicleta
+Dibujar
+Escalera
+Invierno
+Saltar
+Camisa
+Pluma
+Vivir
