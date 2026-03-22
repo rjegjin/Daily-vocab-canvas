@@ -133,3 +133,12 @@ Saltar
 Camisa
 Pluma
 Vivir
+Césped
+Correr
+Anillo
+Mirar
+Cielo
+Camino
+Bolsa
+Escribir
+Sombrero
