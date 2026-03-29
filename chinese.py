@@ -75,7 +75,7 @@ def generate_vocab(learned):
     각 항목:
     - "word": 간체자 표기 (예: "樱花")
     - "pinyin": 성조 포함 병음 (예: "yīng huā")
-    - "meaning": 한국어 뜻 (예: "벚꽃")
+    - "meaning": English meaning (e.g. "cherry blossom")
     - "example": 짧은 중국어 예문 (10자 이내)
 
     마크다운 없이 순수 JSON 배열만 출력.

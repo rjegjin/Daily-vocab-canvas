@@ -71,7 +71,7 @@ def generate_vocab(learned):
     For each word, provide:
     - "word": The Spanish word
     - "ipa": The IPA pronunciation
-    - "meaning": The Korean meaning
+    - "meaning": The English meaning (1-3 words)
     - "example": A short, simple Spanish example sentence (max 8 words).
 
     Output strictly valid JSON. No markdown formatting, just the raw JSON array.

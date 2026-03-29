@@ -76,7 +76,7 @@ def generate_vocab(learned):
     각 항목:
     - "word": 한자 표기 (예: "桜")
     - "furigana": 히라가나 읽기 (예: "さくら")
-    - "meaning": 한국어 뜻 (예: "벚꽃")
+    - "meaning": English meaning (e.g. "cherry blossom")
     - "example": 짧은 일본어 예문 (8단어 이내)
 
     마크다운 없이 순수 JSON 배열만 출력.
