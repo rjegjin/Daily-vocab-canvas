@@ -1,10 +1,7 @@
 name: Daily Japanese Vocab Card
 
 on:
-  schedule:
-    # 21:00 UTC = 06:00 KST
-    - cron: '0 21 * * *'
-  workflow_dispatch:
+  workflow_dispatch: # 로컬 systemd 타이머로 대체 (수동 트리거만 유지)
 
 permissions:
   contents: write
