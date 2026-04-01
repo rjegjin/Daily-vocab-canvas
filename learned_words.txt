@@ -276,3 +276,12 @@ Olvido
 Valiente
 Distancia
 Elegante
+Bruma
+Cima
+Cosechar
+Gélido
+Hoguera
+Joya
+Lanzar
+Manto
+Zorro
