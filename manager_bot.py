@@ -35,6 +35,7 @@ SCRIPTS = {
     "ja": os.path.join(PROJECT_DIR, "japanese.py"),
     "zh": os.path.join(PROJECT_DIR, "chinese.py"),
     "es_patterns": os.path.join(PROJECT_DIR, "main_patterns.py"),
+    "ja_rules": os.path.join(PROJECT_DIR, "japanese_rules.py"),
     "zh_tones": os.path.join(PROJECT_DIR, "chinese_tones.py"),
 }
 LANG_LABEL = {"es": "🇪🇸 스페인어", "ja": "🇯🇵 일본어", "zh": "🇨🇳 중국어"}
@@ -191,9 +192,10 @@ async def post_init(app: Application):
     scheduler.add_job(daily_run, "cron", hour=7, minute=0, args=["zh", app], id="vocab_zh")
     # 추가 자료 발송 (5분 뒤)
     scheduler.add_job(daily_run, "cron", hour=5, minute=5, args=["es_patterns", app], id="pattern_es")
+    scheduler.add_job(daily_run, "cron", hour=6, minute=5, args=["ja_rules", app], id="rules_ja")
     scheduler.add_job(daily_run, "cron", hour=7, minute=5, args=["zh_tones", app], id="tones_zh")
     scheduler.start()
-    log.info("스케줄러 시작 — 05:00 ES / 05:05 Pattern / 06:00 JA / 07:00 ZH / 07:05 Tones")
+    log.info("스케줄러 시작 — 05:00 ES / 05:05 Pattern / 06:00 JA / 06:05 Rules / 07:00 ZH / 07:05 Tones")
 
 def main():
     if not TOKEN:
