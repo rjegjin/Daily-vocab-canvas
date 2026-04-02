@@ -56,30 +56,7 @@ HSK_WORDS = [
     ("坐", "zuò", "sit", "坐下", "Sit down"),
 ]
 
-# -------------------------------------------------------------------
-# 성조 시각화 문자열
-# -------------------------------------------------------------------
-TONE_MARKS = {
-    1: "1声 (High Flat) ─────",
-    2: "2声 (Rising) ╱",
-    3: "3声 (Low Dip) ∨",
-    4: "4声 (Falling) ╲",
-}
-
-TONE_VISUAL = {
-    1: """  ████████ (안정된 고음)
-    물리감: 뇌 상단에 고정""",
-    2: """      ╱██ (올라가는 에너지)
-   ╱
-  물리감: 의문형 "뭐?!"의 근육""",
-    3: """  ╱█╲
- █   █ (내려갔다 올라옴)
-    물리감: 아래를 찍는 것이 핵심""",
-    4: """  ██╲
-     ╲
-      ╲ (내리꽂는 낙하)
-   물리감: 위→아래 충격""",
-}
+# (성조 이미지로 충분 - 텍스트 아트 제거)
 
 # -------------------------------------------------------------------
 # 메인
@@ -105,27 +82,16 @@ if __name__ == "__main__":
     base_idx = (day_of_week * 5) % len(HSK_WORDS)
     selected_words = HSK_WORDS[base_idx:base_idx+5] if base_idx + 5 <= len(HSK_WORDS) else HSK_WORDS[base_idx:] + HSK_WORDS[:5-(len(HSK_WORDS)-base_idx)]
 
-    # 텍스트 생성
-    text_content = f"""🎵 **HSK 1~2级 成调学习** ({datetime.now().strftime('%A')})
+    # 텍스트 생성 (간단히: 단어, 병음, 뜻, 예문만)
+    text_content = f"""🎵 *HSK 1~2级 成调学习* ({datetime.now().strftime('%A')})
 
-오늘의 단어들을 성조의 '에너지 방향'으로 느껴보세요.
-한자를 보지 말고 **소리만** 들으세요.
-
+아래 이미지의 성조 곡선과 함께 들어보세요.
 """
 
     for char, pinyin, meaning, example, example_en in selected_words:
-        tone_num = get_tone_number(pinyin)
-
         text_content += f"""
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-**汉字:** {char}
-**拼音:** {pinyin}  |  {TONE_MARKS[tone_num]}
-**意思:** {meaning}
-
-{TONE_VISUAL[tone_num]}
-
-**例句:** {example}
-**영어:** {example_en}
+*{char}* `{pinyin}` — {meaning}
+"{example}" ({example_en})
 """
 
     print(text_content)

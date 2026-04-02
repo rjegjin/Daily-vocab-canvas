@@ -114,24 +114,22 @@ if __name__ == "__main__":
 
     # 텍스트 생성
     day_name = pattern_data['day_name']
-    text_content = f"""📌 **반사 신경 패턴** ({day_name}요일)
+    text_content = f"""📌 *반사 신경 패턴* ({day_name}요일)
 
-**패턴:** {pattern_data['pattern']}
-**의미:** {pattern_data['explanation']}
+*패턴:* `{pattern_data['pattern']}`
+*의미:* {pattern_data['explanation']}
 
-**예문:**
+*예문:*
 "{pattern_data['example']}"
 
-**한국어 해석:**
+*한국어:*
 "{pattern_data['example_translation']}"
 
----
-
-📌 **이 주의 화학 용어**
+*이 주의 화학 용어:*
 """
 
     for span, meaning, explanation in selected_terms:
-        text_content += f"\n• **{span}** ({meaning})\n  {explanation}"
+        text_content += f"\n• `{span}` — {meaning}\n  {explanation}"
 
     print(text_content)
 

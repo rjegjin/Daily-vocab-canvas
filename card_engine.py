@@ -326,9 +326,15 @@ def send_audio_to_telegram(audio_path: str, token: str, chat_id: str, caption: s
     except Exception as e:
         print(f"❌ 전송 오류: {e}")
 
-def send_text_to_telegram(text: str, token: str, chat_id: str):
+def send_text_to_telegram(text: str, token: str, chat_id: str, parse_mode: str = "Markdown"):
     """
     텍스트 메시지를 텔레그램으로 전송
+
+    Args:
+        text: 전송할 텍스트
+        token: 봇 토큰
+        chat_id: 채팅 ID
+        parse_mode: "Markdown" 또는 "HTML" (기본값: Markdown)
     """
     url = f"https://api.telegram.org/bot{token}/sendMessage"
 
@@ -343,7 +349,8 @@ def send_text_to_telegram(text: str, token: str, chat_id: str):
     session.verify = False
 
     try:
-        result = session.post(url, data={'chat_id': chat_id, 'text': text}).json()
+        data = {'chat_id': chat_id, 'text': text, 'parse_mode': parse_mode}
+        result = session.post(url, data=data).json()
         if result.get("ok"):
             print(f"[{datetime.now()}] 🚀 메시지를 성공적으로 보냈습니다!")
         else:
