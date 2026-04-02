@@ -48,25 +48,48 @@ def fields_fn(item, fonts):
     ]
 
 # -------------------------------------------------------------------
-# 단어 데이터 생성
+# 단어 데이터 생성 (JSON 기반)
 # -------------------------------------------------------------------
+LEARNED_JSON_FILE = os.path.join(PROJECT_DIR, 'learned_data_es.json')
+
+def load_learned_json():
+    """learned_data_es.json에서 단어 목록 로드"""
+    if os.path.exists(LEARNED_JSON_FILE):
+        with open(LEARNED_JSON_FILE, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+            return [item['word'] for item in data]
+    return []
+
+def load_weak_words():
+    """weak=True인 단어들 로드"""
+    if os.path.exists(LEARNED_JSON_FILE):
+        with open(LEARNED_JSON_FILE, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+            return [item['word'] for item in data if item.get('weak')]
+    return []
+
 def load_learned():
+    """Fallback: TXT 파일에서 로드 (마이그레이션 전)"""
     if os.path.exists(LEARNED_FILE):
         with open(LEARNED_FILE, 'r', encoding='utf-8') as f:
             return [l.strip() for l in f if l.strip()]
     return []
 
-def save_learned(words):
-    with open(LEARNED_FILE, 'a', encoding='utf-8') as f:
-        for w in words: f.write(w + '\n')
-
-def generate_vocab(learned):
+def generate_vocab(learned, weak_words=None):
     print("🧠 스페인어 단어 데이터 생성 중...")
+
     exclude = f"CRITICAL: DO NOT use any of these words: {', '.join(learned[-300:])}." if learned else ""
+
+    # weak 단어 우선 포함 (복습 목표)
+    weak_instruction = ""
+    if weak_words:
+        weak_instruction = f"\n⚠️ IMPORTANT: Try to include 2-3 of these weak words for review: {', '.join(weak_words[:5])}"
+
     prompt = f"""
     Create a JSON array of 9 Spanish vocabulary words for daily learning.
     Provide a mix of categories (emotions, nature, objects, actions, etc.).
     {exclude}
+    {weak_instruction}
 
     For each word, provide:
     - "word": The Spanish word
@@ -99,10 +122,15 @@ def generate_vocab(learned):
 if __name__ == "__main__":
     print(f"=== 🇪🇸 Spanish Vocab Card ({datetime.now().strftime('%Y-%m-%d %H:%M:%S')}) ===")
 
-    learned = load_learned()
-    print(f"📚 학습한 단어: {len(learned)}개")
+    # JSON 파일 기반 로드 (마이그레이션 후) 또는 TXT 파일 (마이그레이션 전)
+    learned = load_learned_json() if os.path.exists(LEARNED_JSON_FILE) else load_learned()
+    weak_words = load_weak_words() if os.path.exists(LEARNED_JSON_FILE) else []
 
-    vocab, txt_in, txt_out = generate_vocab(learned)
+    print(f"📚 학습한 단어: {len(learned)}개")
+    if weak_words:
+        print(f"⚠️ 취약 단어: {len(weak_words)}개 (복습 대상)")
+
+    vocab, txt_in, txt_out = generate_vocab(learned, weak_words)
     if not vocab: exit(1)
 
     icons = generate_icons(client, vocab, lang='es', lang_hint='Spanish',
@@ -114,7 +142,10 @@ if __name__ == "__main__":
 
     if result and os.path.exists(result):
         send_to_telegram(result, TOKEN, CHAT_ID)
-        save_learned([d['word'] for d in vocab])
-        print("💾 9개 단어 저장 완료")
+
+        # JSON 파일에 신규 단어 저장
+        from card_engine import save_vocab_to_json
+        save_vocab_to_json(LEARNED_JSON_FILE, [d['word'] for d in vocab])
+        print("💾 9개 단어 JSON 저장 완료")
     else:
         print("⚠️ 이미지 생성 실패, 전송 건너뜀")
