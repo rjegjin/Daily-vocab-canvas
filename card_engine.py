@@ -11,6 +11,47 @@ import requests
 from datetime import datetime, date
 from PIL import Image, ImageDraw, ImageFont
 from google.genai import types
+from google.cloud import texttospeech
+
+def save_vocab_to_json(json_file: str, new_words: list):
+    """
+    learned_data_*.json에 신규 단어를 저장
+
+    단어가 이미 존재하면 seen_count를 증가시킴
+    새로운 단어면 오늘 날짜로 추가
+    """
+    data = []
+    if os.path.exists(json_file):
+        with open(json_file, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+
+    # 기존 단어 맵
+    word_map = {item['word']: item for item in data}
+    today = date.today().isoformat()
+
+    for word in new_words:
+        if word in word_map:
+            # 기존 단어: seen_count 증가 + weak 리셋
+            word_map[word]['seen_count'] = word_map[word].get('seen_count', 1) + 1
+            if word_map[word].get('weak'):
+                word_map[word]['weak'] = False
+                word_map[word]['weak_date'] = None
+        else:
+            # 신규 단어: 기본 정보로 추가
+            word_map[word] = {
+                'word': word,
+                'date_added': today,
+                'category': 'unknown',  # 나중에 vocab_analyze.py에서 분류
+                'seen_count': 1,
+                'weak': False,
+                'weak_date': None
+            }
+
+    # 리스트로 재구성
+    data = list(word_map.values())
+
+    with open(json_file, 'w', encoding='utf-8') as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
 
 # 레이아웃 상수
 CARD_SIZE    = 1080
@@ -211,6 +252,99 @@ def send_to_telegram(image_path, token, chat_id):
             result = session.post(url, data={'chat_id': chat_id}, files={'photo': photo}).json()
         if result.get("ok"):
             print(f"[{datetime.now()}] 🚀 카드를 성공적으로 보냈습니다!")
+        else:
+            print(f"❌ 전송 실패: {result}")
+    except Exception as e:
+        print(f"❌ 전송 오류: {e}")
+
+# -------------------------------------------------------------------
+# Google Text-to-Speech (음성 생성)
+# -------------------------------------------------------------------
+def generate_tts(text: str, lang_code: str, output_path: str):
+    """
+    Google Cloud Text-to-Speech로 음성 파일 생성
+
+    Args:
+        text: 음성화할 텍스트
+        lang_code: 언어 코드 (예: 'es-ES', 'zh-CN')
+        output_path: 저장할 MP3 파일 경로
+
+    Returns:
+        성공 시 output_path, 실패 시 None
+    """
+    try:
+        # 서비스 계정 키 설정
+        key_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                                '.secrets', 'service_key.json')
+        os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = key_path
+
+        client = texttospeech.TextToSpeechClient()
+
+        synthesis_input = texttospeech.SynthesisInput(text=text)
+        voice = texttospeech.VoiceSelectionParams(language_code=lang_code, ssml_gender=texttospeech.SsmlVoiceGender.NEUTRAL)
+        audio_config = texttospeech.AudioConfig(audio_encoding=texttospeech.AudioEncoding.MP3)
+
+        response = client.synthesize_speech(input=synthesis_input, voice=voice, audio_config=audio_config)
+
+        with open(output_path, 'wb') as out:
+            out.write(response.audio_content)
+
+        print(f"✅ 음성 생성 완료: {output_path}")
+        return output_path
+    except Exception as e:
+        print(f"❌ TTS 생성 실패: {e}")
+        return None
+
+def send_audio_to_telegram(audio_path: str, token: str, chat_id: str, caption: str = ""):
+    """
+    오디오 파일을 텔레그램으로 전송
+    """
+    print("📤 음성을 텔레그램으로 전송 중...")
+    url = f"https://api.telegram.org/bot{token}/sendAudio"
+
+    class IPAdapter(requests.adapters.HTTPAdapter):
+        def send(self, request, **kwargs):
+            request.url = request.url.replace("api.telegram.org", "149.154.167.220")
+            request.headers["Host"] = "api.telegram.org"
+            return super().send(request, **kwargs)
+
+    session = requests.Session()
+    session.mount("https://", IPAdapter())
+    session.verify = False
+
+    try:
+        with open(audio_path, 'rb') as audio:
+            data = {'chat_id': chat_id}
+            if caption:
+                data['caption'] = caption
+            result = session.post(url, data=data, files={'audio': audio}).json()
+        if result.get("ok"):
+            print(f"[{datetime.now()}] 🚀 음성을 성공적으로 보냈습니다!")
+        else:
+            print(f"❌ 전송 실패: {result}")
+    except Exception as e:
+        print(f"❌ 전송 오류: {e}")
+
+def send_text_to_telegram(text: str, token: str, chat_id: str):
+    """
+    텍스트 메시지를 텔레그램으로 전송
+    """
+    url = f"https://api.telegram.org/bot{token}/sendMessage"
+
+    class IPAdapter(requests.adapters.HTTPAdapter):
+        def send(self, request, **kwargs):
+            request.url = request.url.replace("api.telegram.org", "149.154.167.220")
+            request.headers["Host"] = "api.telegram.org"
+            return super().send(request, **kwargs)
+
+    session = requests.Session()
+    session.mount("https://", IPAdapter())
+    session.verify = False
+
+    try:
+        result = session.post(url, data={'chat_id': chat_id, 'text': text}).json()
+        if result.get("ok"):
+            print(f"[{datetime.now()}] 🚀 메시지를 성공적으로 보냈습니다!")
         else:
             print(f"❌ 전송 실패: {result}")
     except Exception as e:
