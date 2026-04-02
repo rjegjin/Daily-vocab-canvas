@@ -113,7 +113,12 @@ def _menu_inline() -> InlineKeyboardMarkup:
             IKB("🔄 전체 일괄 생성", callback_data="run:all")
         ],
         [
-            IKB("📊 누적 학습량 및 비용 조회", callback_data="info:stats")
+            IKB("📝 ES 패턴", callback_data="run:es_patterns"),
+            IKB("📐 JA 규칙", callback_data="run:ja_rules")
+        ],
+        [
+            IKB("🎵 ZH 성조", callback_data="run:zh_tones"),
+            IKB("📊 학습량 및 비용", callback_data="info:stats")
         ]
     ])
 
@@ -121,6 +126,7 @@ def _menu_reply() -> ReplyKeyboardMarkup:
     """하단에 항상 상주하는 메뉴 키보드"""
     return ReplyKeyboardMarkup([
         ["🇪🇸 스페인어", "🇯🇵 일본어", "🇨🇳 중국어"],
+        ["📝 ES 패턴", "📐 JA 규칙", "🎵 ZH 성조"],
         ["🔄 전체 일괄 생성", "📊 통계 및 비용 조회"]
     ], resize_keyboard=True)
 
@@ -143,7 +149,7 @@ async def cmd_manage(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def handle_text_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """하단 상주 메뉴 버튼 클릭 처리"""
     text = update.message.text
-    
+
     if text == "🇪🇸 스페인어":
         msg = await asyncio.to_thread(_run, "es")
         await update.message.reply_text(msg)
@@ -152,6 +158,15 @@ async def handle_text_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(msg)
     elif text == "🇨🇳 중국어":
         msg = await asyncio.to_thread(_run, "zh")
+        await update.message.reply_text(msg)
+    elif text == "📝 ES 패턴":
+        msg = await asyncio.to_thread(_run, "es_patterns")
+        await update.message.reply_text(msg)
+    elif text == "📐 JA 규칙":
+        msg = await asyncio.to_thread(_run, "ja_rules")
+        await update.message.reply_text(msg)
+    elif text == "🎵 ZH 성조":
+        msg = await asyncio.to_thread(_run, "zh_tones")
         await update.message.reply_text(msg)
     elif text == "🔄 전체 일괄 생성":
         msg = await asyncio.to_thread(_run_all)
