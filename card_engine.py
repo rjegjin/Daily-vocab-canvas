@@ -8,6 +8,7 @@ import json
 import textwrap
 import concurrent.futures
 import requests
+import math
 from datetime import datetime, date
 from PIL import Image, ImageDraw, ImageFont
 from google.genai import types
@@ -349,3 +350,121 @@ def send_text_to_telegram(text: str, token: str, chat_id: str):
             print(f"❌ 전송 실패: {result}")
     except Exception as e:
         print(f"❌ 전송 오류: {e}")
+
+# -------------------------------------------------------------------
+# 중국어 성조 곡선 이미지 생성 (2x2 그리드)
+# -------------------------------------------------------------------
+def generate_tone_chart(output_path: str):
+    """
+    4개 성조(1,2,3,4)의 곡선을 2x2 그리드로 배치한 이미지 생성
+
+    Args:
+        output_path: 저장할 PNG 파일 경로
+
+    Returns:
+        성공 시 output_path, 실패 시 None
+    """
+    try:
+        CELL_W, CELL_H = 192, 192
+        PADDING = 20
+        MARGIN = 10
+        TOTAL_W = CELL_W * 2 + PADDING + MARGIN * 2
+        TOTAL_H = CELL_H * 2 + PADDING + MARGIN * 2
+
+        # 색상
+        BG_COLOR = (240, 240, 240)      # 밝은 회색
+        CURVE_COLOR = (0, 102, 204)     # 파란색
+        GRID_COLOR = (200, 200, 200)    # 격자선 (밝은 회색)
+        AXIS_COLOR = (150, 150, 150)    # 축 (회색)
+        TEXT_COLOR = (0, 0, 0)          # 검정
+
+        # 캔버스 생성
+        canvas = Image.new("RGB", (TOTAL_W, TOTAL_H), BG_COLOR)
+        draw = ImageDraw.Draw(canvas)
+
+        # 성조별 곡선 함수
+        def draw_tone_curve(draw_obj, x_offset, y_offset, tone_num):
+            """각 성조의 곡선을 그림"""
+            # 격자선
+            for i in range(1, 5):
+                y = y_offset + int(CELL_H * i / 5)
+                draw_obj.line([(x_offset, y), (x_offset + CELL_W, y)], fill=GRID_COLOR, width=1)
+
+            # 축
+            draw_obj.rectangle([x_offset, y_offset, x_offset + CELL_W, y_offset + CELL_H],
+                              outline=AXIS_COLOR, width=2)
+
+            # 성조 곡선 (좌표: 0~1, 변환 후 픽셀)
+            points = []
+
+            if tone_num == 1:  # High Flat (수평선, 높은 위치)
+                for x in range(0, CELL_W + 1, 2):
+                    norm_x = x / CELL_W
+                    norm_y = 0.7  # 높은 위치 (반대: y=0이 위, y=1이 아래)
+                    px = x_offset + x
+                    py = y_offset + int(CELL_H * (1 - norm_y))
+                    points.append((px, py))
+
+            elif tone_num == 2:  # Rising (올라가는 곡선)
+                for x in range(0, CELL_W + 1, 2):
+                    norm_x = x / CELL_W
+                    norm_y = 0.2 + norm_x * 0.6  # 0.2에서 0.8로
+                    px = x_offset + x
+                    py = y_offset + int(CELL_H * (1 - norm_y))
+                    points.append((px, py))
+
+            elif tone_num == 3:  # Low Dip (내려갔다 올라옴)
+                for x in range(0, CELL_W + 1, 2):
+                    norm_x = x / CELL_W
+                    # 0에서 0.5까지: 0.7 → 0.2, 0.5에서 1까지: 0.2 → 0.6
+                    if norm_x < 0.5:
+                        norm_y = 0.7 - (norm_x * 2) * 0.5
+                    else:
+                        norm_y = 0.2 + ((norm_x - 0.5) * 2) * 0.4
+                    px = x_offset + x
+                    py = y_offset + int(CELL_H * (1 - norm_y))
+                    points.append((px, py))
+
+            elif tone_num == 4:  # Falling (내려가는 직선)
+                for x in range(0, CELL_W + 1, 2):
+                    norm_x = x / CELL_W
+                    norm_y = 0.8 - norm_x * 0.6  # 0.8에서 0.2로
+                    px = x_offset + x
+                    py = y_offset + int(CELL_H * (1 - norm_y))
+                    points.append((px, py))
+
+            # 곡선 그리기
+            if len(points) > 1:
+                draw_obj.line(points, fill=CURVE_COLOR, width=3)
+
+            # 성조 숫자 라벨
+            label = f"{tone_num}声"
+            try:
+                font = ImageFont.load_default()
+                bbox = draw_obj.textbbox((0, 0), label, font=font)
+                label_w = bbox[2] - bbox[0]
+                label_h = bbox[3] - bbox[1]
+                label_x = x_offset + (CELL_W - label_w) // 2
+                label_y = y_offset + CELL_H - label_h - 3
+                draw_obj.text((label_x, label_y), label, fill=TEXT_COLOR, font=font)
+            except:
+                pass
+
+        # 2x2 그리드로 배치
+        positions = [
+            (MARGIN, MARGIN, 1),              # 좌상: 1성
+            (MARGIN + CELL_W + PADDING, MARGIN, 2),  # 우상: 2성
+            (MARGIN, MARGIN + CELL_H + PADDING, 3),  # 좌하: 3성
+            (MARGIN + CELL_W + PADDING, MARGIN + CELL_H + PADDING, 4),  # 우하: 4성
+        ]
+
+        for x_off, y_off, tone in positions:
+            draw_tone_curve(draw, x_off, y_off, tone)
+
+        canvas.save(output_path, "PNG")
+        print(f"✅ 성조 차트 생성 완료: {output_path}")
+        return output_path
+
+    except Exception as e:
+        print(f"❌ 성조 차트 생성 실패: {e}")
+        return None

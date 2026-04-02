@@ -6,7 +6,7 @@ import os
 import json
 from datetime import datetime
 from dotenv import load_dotenv
-from card_engine import generate_tts, send_audio_to_telegram, send_text_to_telegram
+from card_engine import generate_tts, send_audio_to_telegram, send_text_to_telegram, generate_tone_chart, send_to_telegram
 
 # -------------------------------------------------------------------
 # 환경 변수
@@ -132,6 +132,13 @@ if __name__ == "__main__":
 
     # 텔레그램으로 텍스트 전송
     send_text_to_telegram(text_content, TOKEN, CHAT_ID)
+
+    # 성조 곡선 이미지 생성 및 전송
+    tone_chart_path = os.path.join(PROJECT_DIR, "tone_chart.png")
+    if generate_tone_chart(tone_chart_path):
+        send_to_telegram(tone_chart_path, TOKEN, CHAT_ID)
+        if os.path.exists(tone_chart_path):
+            os.remove(tone_chart_path)
 
     # 각 단어별 음성 생성 및 전송 (처음 3개만)
     for i, (char, pinyin, meaning, example, _) in enumerate(selected_words[:3]):
