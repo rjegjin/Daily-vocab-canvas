@@ -53,7 +53,8 @@ def _run(lang: str) -> str:
     if lang not in SCRIPTS:
         return "❌ 알 수 없는 언어입니다."
     subprocess.Popen([VENV_PY, SCRIPTS[lang]], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    return f"{LANG_LABEL[lang]} 카드 생성 시작 (백그라운드 진행, 완료 시 전송)"
+    label = LANG_LABEL.get(lang, lang)
+    return f"{label} 카드 생성 시작 (백그라운드 진행, 완료 시 전송)"
 
 def _run_all() -> str:
     for lang in SCRIPTS.keys():
