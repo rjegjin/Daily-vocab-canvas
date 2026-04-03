@@ -37,6 +37,7 @@ SCRIPTS = {
     "es_patterns": os.path.join(PROJECT_DIR, "main_patterns.py"),
     "ja_rules": os.path.join(PROJECT_DIR, "japanese_rules.py"),
     "zh_tones": os.path.join(PROJECT_DIR, "chinese_tones.py"),
+    "monthly": os.path.join(PROJECT_DIR, "monthly_report.py"),
 }
 LANG_LABEL = {"es": "🇪🇸 스페인어", "ja": "🇯🇵 일본어", "zh": "🇨🇳 중국어"}
 
@@ -63,22 +64,24 @@ def _run_all() -> str:
 
 def _get_stats() -> str:
     stats_msg = "📈 *학습 및 단어장 통계*\n\n"
-    files = {"es": "learned_words.txt", "ja": "learned_ja.txt", "zh": "learned_zh.txt"}
+    json_files = {"es": "learned_data_es.json", "ja": "learned_data_ja.json", "zh": "learned_data_zh.json"}
+    today_str = str(date.today())
+    this_month = today_str[:7]  # "YYYY-MM"
 
-    for lang, fname in files.items():
+    for lang, fname in json_files.items():
         filepath = os.path.join(PROJECT_DIR, fname)
-        count = 0
-        recent_words = []
-        if os.path.exists(filepath):
-            with open(filepath, 'r', encoding='utf-8') as f:
-                lines = [line.strip() for line in f if line.strip()]
-                count = len(lines)
-                recent_words = lines[-5:] # 최근 추가된 단어 5개
-        
-        stats_msg += f"- {LANG_LABEL.get(lang, lang)}: 총 {count}개 마스터\n"
-        if recent_words:
-            stats_msg += f"  > 최근 추가: {', '.join(recent_words)}\n"
-        stats_msg += "\n"
+        if not os.path.exists(filepath):
+            stats_msg += f"- {LANG_LABEL.get(lang, lang)}: 데이터 없음\n\n"
+            continue
+        with open(filepath, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        total = len(data)
+        weak  = sum(1 for d in data if d.get('weak'))
+        this_month_count = sum(1 for d in data if d.get('date_added', '').startswith(this_month))
+        recent = [d['word'] for d in sorted(data, key=lambda x: x.get('date_added', ''))[-5:]]
+        stats_msg += f"*{LANG_LABEL.get(lang, lang)}*\n"
+        stats_msg += f"  총 {total}개 · 이번 달 +{this_month_count}개 · 취약 {weak}개\n"
+        stats_msg += f"  최근: {', '.join(recent)}\n\n"
 
     # API 비용 확인
     stats_msg += "💰 *오늘의 API 비용*\n"
@@ -87,9 +90,8 @@ def _get_stats() -> str:
         try:
             with open(cost_path, 'r', encoding='utf-8') as f:
                 log_data = json.load(f)
-            today = str(date.today())
-            if today in log_data and '_daily_total_usd' in log_data[today]:
-                stats_msg += f"- 누적 금액: ${log_data[today]['_daily_total_usd']:.4f}\n"
+            if today_str in log_data and '_daily_total_usd' in log_data[today_str]:
+                stats_msg += f"- 누적 금액: ${log_data[today_str]['_daily_total_usd']:.4f}\n"
             else:
                 stats_msg += "- 오늘 발생한 과금 없음\n"
         except Exception as e:
@@ -120,6 +122,9 @@ def _menu_inline() -> InlineKeyboardMarkup:
         [
             IKB("🎵 ZH 성조", callback_data="run:zh_tones"),
             IKB("📊 학습량 및 비용", callback_data="info:stats")
+        ],
+        [
+            IKB("📅 월간 성취 리포트", callback_data="run:monthly")
         ]
     ])
 
@@ -128,7 +133,8 @@ def _menu_reply() -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup([
         ["🇪🇸 스페인어", "🇯🇵 일본어", "🇨🇳 중국어"],
         ["📝 ES 패턴", "📐 JA 규칙", "🎵 ZH 성조"],
-        ["🔄 전체 일괄 생성", "📊 통계 및 비용 조회"]
+        ["🔄 전체 일괄 생성", "📊 통계 및 비용 조회"],
+        ["📅 월간 성취 리포트"]
     ], resize_keyboard=True)
 
 # -------------------------------------------------------------------
@@ -175,6 +181,9 @@ async def handle_text_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif text == "📊 통계 및 비용 조회":
         msg = await asyncio.to_thread(_get_stats)
         await update.message.reply_text(msg, parse_mode="Markdown")
+    elif text == "📅 월간 성취 리포트":
+        msg = await asyncio.to_thread(_run, "monthly")
+        await update.message.reply_text(msg)
 
 async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -210,6 +219,8 @@ async def post_init(app: Application):
     scheduler.add_job(daily_run, "cron", hour=5, minute=5, args=["es_patterns", app], id="pattern_es")
     scheduler.add_job(daily_run, "cron", hour=6, minute=5, args=["ja_rules", app], id="rules_ja")
     scheduler.add_job(daily_run, "cron", hour=7, minute=5, args=["zh_tones", app], id="tones_zh")
+    # 매월 1일 00:30 — 전월 성취 리포트
+    scheduler.add_job(daily_run, "cron", day=1, hour=0, minute=30, args=["monthly", app], id="monthly_report")
     scheduler.start()
     log.info("스케줄러 시작 — 05:00 ES / 05:05 Pattern / 06:00 JA / 06:05 Rules / 07:00 ZH / 07:05 Tones")
 

@@ -14,41 +14,50 @@ from PIL import Image, ImageDraw, ImageFont
 from google.genai import types
 from google.cloud import texttospeech
 
-def save_vocab_to_json(json_file: str, new_words: list):
+# 프록시 설정 (환경 변수)
+PROXY_URL = os.getenv('TELEGRAM_PROXY_URL')
+
+def save_vocab_to_json(json_file: str, new_vocab: list):
     """
     learned_data_*.json에 신규 단어를 저장
 
+    new_vocab: list of dicts (word, category 포함) 또는 list of str (하위 호환)
     단어가 이미 존재하면 seen_count를 증가시킴
     새로운 단어면 오늘 날짜로 추가
     """
+    # 하위 호환: 문자열 리스트면 dict 리스트로 변환
+    if new_vocab and isinstance(new_vocab[0], str):
+        new_vocab = [{'word': w} for w in new_vocab]
+
     data = []
     if os.path.exists(json_file):
         with open(json_file, 'r', encoding='utf-8') as f:
             data = json.load(f)
 
-    # 기존 단어 맵
     word_map = {item['word']: item for item in data}
     today = date.today().isoformat()
 
-    for word in new_words:
+    for item in new_vocab:
+        word = item['word']
+        category = item.get('category', 'unknown')
         if word in word_map:
-            # 기존 단어: seen_count 증가 + weak 리셋
             word_map[word]['seen_count'] = word_map[word].get('seen_count', 1) + 1
             if word_map[word].get('weak'):
                 word_map[word]['weak'] = False
                 word_map[word]['weak_date'] = None
+            # 카테고리가 unknown이었으면 갱신
+            if word_map[word].get('category', 'unknown') == 'unknown' and category != 'unknown':
+                word_map[word]['category'] = category
         else:
-            # 신규 단어: 기본 정보로 추가
             word_map[word] = {
                 'word': word,
                 'date_added': today,
-                'category': 'unknown',  # 나중에 vocab_analyze.py에서 분류
+                'category': category,
                 'seen_count': 1,
                 'weak': False,
-                'weak_date': None
+                'weak_date': None,
             }
 
-    # 리스트로 재구성
     data = list(word_map.values())
 
     with open(json_file, 'w', encoding='utf-8') as f:
@@ -63,6 +72,30 @@ TEXT_H       = int(CELL_SIZE * TEXT_RATIO)   # 198
 ICON_H       = CELL_SIZE - TEXT_H            # 162
 BORDER_COLOR = (220, 220, 220)
 PAD          = int(CELL_SIZE * 0.06)         # ~21px
+
+# 언어별 색상 테마
+LANG_THEMES = {
+    'es': {
+        'text_bg': (255, 251, 240),   # 따뜻한 크림
+        'border':  (210, 140, 40),    # 황금 오렌지
+        'divider': (210, 140, 40),
+    },
+    'ja': {
+        'text_bg': (240, 245, 255),   # 차가운 블루-화이트
+        'border':  (70, 115, 195),    # 인디고 블루
+        'divider': (70, 115, 195),
+    },
+    'zh': {
+        'text_bg': (255, 242, 242),   # 연한 붉은빛
+        'border':  (195, 45, 45),     # 붉은색
+        'divider': (195, 45, 45),
+    },
+    'default': {
+        'text_bg': (255, 255, 255),
+        'border':  (220, 220, 220),
+        'divider': (220, 220, 220),
+    },
+}
 
 # 비용 단가 ($/1M tokens)
 _PRICE = {
@@ -180,8 +213,9 @@ def generate_icons(client, vocab_data, lang, lang_hint="",
 # -------------------------------------------------------------------
 # 플래시카드 합성
 # -------------------------------------------------------------------
-def create_flashcard(icons, vocab_data, fields_fn, fonts, output_path):
+def create_flashcard(icons, vocab_data, fields_fn, fonts, output_path, theme='default'):
     print("🖋️ 플래시카드 합성 중...")
+    t = LANG_THEMES.get(theme, LANG_THEMES['default'])
     try:
         canvas = Image.new("RGB", (CARD_SIZE, CARD_SIZE), (255, 255, 255))
         draw = ImageDraw.Draw(canvas)
@@ -197,9 +231,9 @@ def create_flashcard(icons, vocab_data, fields_fn, fonts, output_path):
             else:
                 draw.rectangle([x0, icon_y, x0 + CELL_SIZE, y0 + CELL_SIZE], fill=(240, 240, 240))
 
-            draw.rectangle([x0, y0, x0 + CELL_SIZE, icon_y], fill=(255, 255, 255))
-            draw.rectangle([x0, y0, x0 + CELL_SIZE - 1, y0 + CELL_SIZE - 1], outline=BORDER_COLOR, width=1)
-            draw.line([(x0, icon_y), (x0 + CELL_SIZE, icon_y)], fill=BORDER_COLOR, width=1)
+            draw.rectangle([x0, y0, x0 + CELL_SIZE, icon_y], fill=t['text_bg'])
+            draw.rectangle([x0, y0, x0 + CELL_SIZE - 1, y0 + CELL_SIZE - 1], outline=t['border'], width=2)
+            draw.line([(x0, icon_y), (x0 + CELL_SIZE, icon_y)], fill=t['divider'], width=2)
 
             def draw_centered(abs_y, text, font, fill):
                 if abs_y + 4 >= y0 + TEXT_H:
@@ -247,6 +281,14 @@ def send_to_telegram(image_path, token, chat_id):
     session = requests.Session()
     session.mount("https://", IPAdapter())
     session.verify = False
+
+    # 프록시 설정 (SOCKS5)
+    if PROXY_URL:
+        print(f"🌐 프록시 활성화: {PROXY_URL}")
+        session.proxies = {
+            'http': PROXY_URL,
+            'https': PROXY_URL,
+        }
 
     try:
         with open(image_path, 'rb') as photo:

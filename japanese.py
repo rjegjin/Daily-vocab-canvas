@@ -97,8 +97,9 @@ def generate_vocab(learned, weak_words=None):
     각 항목:
     - "word": 한자 표기 (예: "桜")
     - "furigana": 히라가나 읽기 (예: "さくら")
-    - "meaning": English meaning (e.g. "cherry blossom")
+    - "meaning": 한국어 의미 1~3단어 (예: "벚꽃")
     - "example": 짧은 일본어 예문 (8단어 이내)
+    - "category": emotion, nature, object, action, food, animal, body, concept, place, time 중 하나
 
     마크다운 없이 순수 JSON 배열만 출력.
     """
@@ -141,14 +142,13 @@ if __name__ == "__main__":
 
     fonts = load_fonts()
     out = os.path.join(PROJECT_DIR, "flashcard_ja.png")
-    result = create_flashcard(icons, vocab, fields_fn, fonts, out)
+    result = create_flashcard(icons, vocab, fields_fn, fonts, out, theme='ja')
 
     if result and os.path.exists(result):
         send_to_telegram(result, TOKEN, CHAT_ID)
 
-        # JSON 파일에 신규 단어 저장
         from card_engine import save_vocab_to_json
-        save_vocab_to_json(LEARNED_JSON_FILE, [d['word'] for d in vocab])
+        save_vocab_to_json(LEARNED_JSON_FILE, vocab)
         print("💾 9개 단어 JSON 저장 완료")
     else:
         print("⚠️ 이미지 생성 실패, 전송 건너뜀")

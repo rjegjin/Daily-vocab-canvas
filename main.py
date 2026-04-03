@@ -94,8 +94,9 @@ def generate_vocab(learned, weak_words=None):
     For each word, provide:
     - "word": The Spanish word
     - "ipa": The IPA pronunciation
-    - "meaning": The English meaning (1-3 words)
-    - "example": A short, simple Spanish example sentence (max 8 words).
+    - "meaning": Korean meaning (1-3 words, e.g. "기쁨", "차가운 바람")
+    - "example": A short, simple Spanish example sentence (max 8 words)
+    - "category": One of: emotion, nature, object, action, food, animal, body, concept, place, time
 
     Output strictly valid JSON. No markdown formatting, just the raw JSON array.
     """
@@ -138,14 +139,13 @@ if __name__ == "__main__":
 
     fonts = load_fonts()
     out = os.path.join(PROJECT_DIR, "final_flashcard.png")
-    result = create_flashcard(icons, vocab, fields_fn, fonts, out)
+    result = create_flashcard(icons, vocab, fields_fn, fonts, out, theme='es')
 
     if result and os.path.exists(result):
         send_to_telegram(result, TOKEN, CHAT_ID)
 
-        # JSON 파일에 신규 단어 저장
         from card_engine import save_vocab_to_json
-        save_vocab_to_json(LEARNED_JSON_FILE, [d['word'] for d in vocab])
+        save_vocab_to_json(LEARNED_JSON_FILE, vocab)
         print("💾 9개 단어 JSON 저장 완료")
     else:
         print("⚠️ 이미지 생성 실패, 전송 건너뜀")
