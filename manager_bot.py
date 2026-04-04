@@ -62,6 +62,44 @@ def _run_all() -> str:
         subprocess.Popen([VENV_PY, SCRIPTS[lang]], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     return "🌍 전체 언어(스페인어, 일본어, 중국어) 카드 생성을 백그라운드에서 시작했습니다!"
 
+def _get_cost_summary() -> str:
+    """cost.py 로직을 인라인으로 실행해 텔레그램용 텍스트 반환"""
+    try:
+        from card_engine import monthly_gemini_total, monthly_tts_chars, load_budget
+        from datetime import date
+
+        today  = date.today()
+        budget = load_budget()
+        used_g = monthly_gemini_total()
+        tts_ch = monthly_tts_chars()
+        billable = max(0, tts_ch - 1_000_000)
+        tts_cost = billable / 1_000_000 * 4.0
+        total  = used_g + tts_cost
+        limit  = budget['monthly_limit_usd']
+        pct    = total / limit * 100 if limit > 0 else 0
+        projected = total / today.day * 30 if today.day > 0 else 0
+
+        LANG_LABEL = {'es': '🇪🇸', 'ja': '🇯🇵', 'zh': '🇨🇳'}
+
+        lines = [
+            f"💰 *{today.year}년 {today.month}월 비용 현황*",
+            "",
+            f"Gemini: *${used_g:.4f}*",
+        ]
+        # 언어별 비활성 표시
+        for lang, lbl in LANG_LABEL.items():
+            enabled = budget['lang_enabled'].get(lang, True)
+            lines.append(f"  {lbl} {'✅' if enabled else '🔴 비활성'}")
+
+        tts_status = '✅' if budget['tts_enabled'] else '🔴 비활성'
+        lines.append(f"TTS: {tts_ch:,}자  ${tts_cost:.5f}  {tts_status}")
+        lines.append(f"")
+        lines.append(f"합계: *${total:.4f}*  /  예산 ${limit:.2f}  ({pct:.1f}%)")
+        lines.append(f"월말 예상: *${projected:.2f}*{'  ⚠️' if projected > limit else ''}")
+        return '\n'.join(lines)
+    except Exception as e:
+        return f"❌ 비용 조회 실패: {e}"
+
 def _get_stats() -> str:
     stats_msg = "📈 *학습 및 단어장 통계*\n\n"
     json_files = {"es": "learned_data_es.json", "ja": "learned_data_ja.json", "zh": "learned_data_zh.json"}
@@ -124,6 +162,7 @@ def _menu_inline() -> InlineKeyboardMarkup:
             IKB("📊 학습량 및 비용", callback_data="info:stats")
         ],
         [
+            IKB("💰 비용 현황", callback_data="info:cost"),
             IKB("📅 월간 성취 리포트", callback_data="run:monthly")
         ]
     ])
@@ -134,7 +173,7 @@ def _menu_reply() -> ReplyKeyboardMarkup:
         ["🇪🇸 스페인어", "🇯🇵 일본어", "🇨🇳 중국어"],
         ["📝 ES 패턴", "📐 JA 규칙", "🎵 ZH 성조"],
         ["🔄 전체 일괄 생성", "📊 통계 및 비용 조회"],
-        ["📅 월간 성취 리포트"]
+        ["💰 비용 현황", "📅 월간 성취 리포트"]
     ], resize_keyboard=True)
 
 # -------------------------------------------------------------------
@@ -181,6 +220,9 @@ async def handle_text_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif text == "📊 통계 및 비용 조회":
         msg = await asyncio.to_thread(_get_stats)
         await update.message.reply_text(msg, parse_mode="Markdown")
+    elif text == "💰 비용 현황":
+        msg = await asyncio.to_thread(_get_cost_summary)
+        await update.message.reply_text(msg, parse_mode="Markdown")
     elif text == "📅 월간 성취 리포트":
         msg = await asyncio.to_thread(_run, "monthly")
         await update.message.reply_text(msg)
@@ -200,6 +242,9 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.edit_message_text(f"📚 *Vocab Card Bot*\n\n{msg}", parse_mode="Markdown", reply_markup=_menu_inline())
     elif data == "info:stats":
         msg = await asyncio.to_thread(_get_stats)
+        await query.edit_message_text(msg, parse_mode="Markdown", reply_markup=_menu_inline())
+    elif data == "info:cost":
+        msg = await asyncio.to_thread(_get_cost_summary)
         await query.edit_message_text(msg, parse_mode="Markdown", reply_markup=_menu_inline())
 
 # -------------------------------------------------------------------

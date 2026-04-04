@@ -1,0 +1,9 @@
+{
+  "monthly_limit_usd": 50.0,
+  "tts_enabled": true,
+  "lang_enabled": {
+    "es": true,
+    "ja": true,
+    "zh": true
+  }
+}

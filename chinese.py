@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 from google import genai
 from PIL import ImageFont
 
-from card_engine import generate_icons, create_flashcard, send_to_telegram
+from card_engine import generate_icons, create_flashcard, send_to_telegram, check_budget_exit
 
 # -------------------------------------------------------------------
 # 환경 변수
@@ -123,6 +123,7 @@ def generate_vocab(learned, weak_words=None):
 # 메인
 # -------------------------------------------------------------------
 if __name__ == "__main__":
+    check_budget_exit('zh')
     print(f"=== 🇨🇳 Chinese Vocab Card ({datetime.now().strftime('%Y-%m-%d %H:%M:%S')}) ===")
 
     # JSON 파일 기반 로드 (마이그레이션 후) 또는 TXT 파일 (마이그레이션 전)

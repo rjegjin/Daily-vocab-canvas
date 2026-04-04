@@ -104,6 +104,98 @@ _PRICE = {
     'img_in':   0.50,
     'img_out':  60.0,
 }
+# TTS 단가: Google Cloud Standard $4/1M chars (1M/월 무료)
+_TTS_PRICE_PER_CHAR = 4.0 / 1_000_000
+
+_BUDGET_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'budget.json')
+_COST_LOG    = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'cost_log.json')
+
+# -------------------------------------------------------------------
+# 예산 읽기/쓰기
+# -------------------------------------------------------------------
+def load_budget() -> dict:
+    defaults = {'monthly_limit_usd': 50.0, 'tts_enabled': True,
+                'lang_enabled': {'es': True, 'ja': True, 'zh': True}}
+    if not os.path.exists(_BUDGET_FILE):
+        return defaults
+    with open(_BUDGET_FILE, 'r') as f:
+        data = json.load(f)
+    # 누락 키 보완
+    for k, v in defaults.items():
+        data.setdefault(k, v)
+    data['lang_enabled'] = {**defaults['lang_enabled'], **data.get('lang_enabled', {})}
+    return data
+
+def save_budget(cfg: dict):
+    with open(_BUDGET_FILE, 'w') as f:
+        json.dump(cfg, f, indent=2)
+
+def monthly_gemini_total() -> float:
+    """cost_log에서 이번 달 Gemini 합계 반환"""
+    if not os.path.exists(_COST_LOG):
+        return 0.0
+    with open(_COST_LOG, 'r') as f:
+        log = json.load(f)
+    prefix = date.today().strftime('%Y-%m')
+    return sum(
+        v.get('_daily_total_usd', 0.0)
+        for k, v in log.items()
+        if k.startswith(prefix) and isinstance(v, dict)
+    )
+
+def monthly_tts_chars() -> int:
+    """cost_log에서 이번 달 TTS 글자 수 합계 반환"""
+    if not os.path.exists(_COST_LOG):
+        return 0
+    with open(_COST_LOG, 'r') as f:
+        log = json.load(f)
+    prefix = date.today().strftime('%Y-%m')
+    total = 0
+    for k, v in log.items():
+        if k.startswith(prefix) and isinstance(v, dict):
+            tts = v.get('tts', {})
+            total += tts.get('chars', 0)
+    return total
+
+def is_lang_enabled(lang: str) -> bool:
+    """언어가 budget.json에서 활성화되어 있는지 확인"""
+    cfg = load_budget()
+    return cfg['lang_enabled'].get(lang, True)
+
+def is_tts_enabled() -> bool:
+    return load_budget().get('tts_enabled', True)
+
+def check_budget_exit(lang: str):
+    """예산 초과 또는 언어 비활성화 시 sys.exit(0) 호출"""
+    import sys
+    cfg = load_budget()
+    if not cfg['lang_enabled'].get(lang, True):
+        print(f"⏭️ {lang} 비활성화 상태 — 건너뜀 (budget.json)")
+        sys.exit(0)
+    used = monthly_gemini_total()
+    limit = cfg['monthly_limit_usd']
+    if used >= limit:
+        print(f"⛔ 월 예산 초과 (${used:.2f} / ${limit:.2f}) — {lang} 실행 중단")
+        sys.exit(0)
+
+def log_tts_chars(char_count: int):
+    """TTS 글자 수를 cost_log.json에 기록"""
+    log = {}
+    if os.path.exists(_COST_LOG):
+        with open(_COST_LOG, 'r') as f:
+            log = json.load(f)
+    today = date.today().isoformat()
+    if today not in log:
+        log[today] = {}
+    tts = log[today].get('tts', {'chars': 0, 'cost_usd': 0.0})
+    tts['chars'] += char_count
+    # 월 누적 글자 수 (1M 이하 무료)
+    month_chars = monthly_tts_chars() + char_count
+    billable = max(0, month_chars - 1_000_000)
+    tts['cost_usd'] = round(billable * _TTS_PRICE_PER_CHAR, 6)
+    log[today]['tts'] = tts
+    with open(_COST_LOG, 'w') as f:
+        json.dump(log, f, indent=2, ensure_ascii=False)
 
 # -------------------------------------------------------------------
 # 비용 계산 & 로깅
@@ -332,7 +424,8 @@ def generate_tts(text: str, lang_code: str, output_path: str):
         with open(output_path, 'wb') as out:
             out.write(response.audio_content)
 
-        print(f"✅ 음성 생성 완료: {output_path}")
+        log_tts_chars(len(text))
+        print(f"✅ 음성 생성 완료: {output_path} ({len(text)}자)")
         return output_path
     except Exception as e:
         print(f"❌ TTS 생성 실패: {e}")
