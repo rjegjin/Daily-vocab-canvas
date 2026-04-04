@@ -12,6 +12,7 @@ import math
 from datetime import datetime, date
 from PIL import Image, ImageDraw, ImageFont
 from google.genai import types
+from google.oauth2 import service_account
 from google.cloud import texttospeech
 
 # 프록시 설정 (환경 변수)
@@ -97,13 +98,36 @@ LANG_THEMES = {
     },
 }
 
-# 비용 단가 ($/1M tokens)
+# 비용 단가
 _PRICE = {
-    'text_in':  0.25,
-    'text_out': 1.50,
-    'img_in':   0.50,
-    'img_out':  60.0,
+    'text_in':   0.25,   # $/1M tokens
+    'text_out':  1.50,   # $/1M tokens
+    'img_per':   0.03,   # $/image (Imagen4 고정 단가)
 }
+
+# Vertex AI Imagen4 설정
+_VERTEX_PROJECT  = "gen-lang-client-0367740438"
+_VERTEX_LOCATION = "us-central1"
+_KEY_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                         '.secrets', 'service_key.json')
+_imagen_client = None
+
+def _get_imagen_client():
+    global _imagen_client
+    if _imagen_client is not None:
+        return _imagen_client
+    import google.genai as genai
+    credentials = service_account.Credentials.from_service_account_file(
+        _KEY_PATH,
+        scopes=["https://www.googleapis.com/auth/cloud-platform"],
+    )
+    _imagen_client = genai.Client(
+        vertexai=True,
+        project=_VERTEX_PROJECT,
+        location=_VERTEX_LOCATION,
+        credentials=credentials,
+    )
+    return _imagen_client
 # TTS 단가: Google Cloud Standard $4/1M chars (1M/월 무료)
 _TTS_PRICE_PER_CHAR = 4.0 / 1_000_000
 
@@ -131,17 +155,24 @@ def save_budget(cfg: dict):
         json.dump(cfg, f, indent=2)
 
 def monthly_gemini_total() -> float:
-    """cost_log에서 이번 달 Gemini 합계 반환"""
+    """cost_log에서 이번 달 이미지+텍스트 합계 반환"""
     if not os.path.exists(_COST_LOG):
         return 0.0
     with open(_COST_LOG, 'r') as f:
         log = json.load(f)
     prefix = date.today().strftime('%Y-%m')
-    return sum(
-        v.get('_daily_total_usd', 0.0)
-        for k, v in log.items()
-        if k.startswith(prefix) and isinstance(v, dict)
-    )
+    total = 0.0
+    for k, v in log.items():
+        if not k.startswith(prefix) or not isinstance(v, dict):
+            continue
+        daily = v.get('_daily_total_usd')
+        if daily is not None:
+            total += daily
+        else:
+            # 하위 호환: 언어별 dict 합산
+            total += sum(lv['cost_usd'] for lv in v.values()
+                         if isinstance(lv, dict) and 'cost_usd' in lv)
+    return total
 
 def monthly_tts_chars() -> int:
     """cost_log에서 이번 달 TTS 글자 수 합계 반환"""
@@ -200,106 +231,92 @@ def log_tts_chars(char_count: int):
 # -------------------------------------------------------------------
 # 비용 계산 & 로깅
 # -------------------------------------------------------------------
-def _calc_cost(img_in, img_out, txt_in=0, txt_out=0):
-    return (
-        txt_in  / 1e6 * _PRICE['text_in']  +
-        txt_out / 1e6 * _PRICE['text_out'] +
-        img_in  / 1e6 * _PRICE['img_in']   +
-        img_out / 1e6 * _PRICE['img_out']
-    )
-
-def log_cost(lang, img_in_tokens, img_out_tokens, txt_in_tokens=0, txt_out_tokens=0):
-    cost = _calc_cost(img_in_tokens, img_out_tokens, txt_in_tokens, txt_out_tokens)
-    cost_log_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'cost_log.json')
+def log_cost(lang, img_count, txt_in_tokens=0, txt_out_tokens=0):
+    """Imagen4 장당 $0.03 고정 + 텍스트 토큰 비용 기록"""
+    img_cost = img_count * _PRICE['img_per']
+    txt_cost = (txt_in_tokens / 1e6 * _PRICE['text_in'] +
+                txt_out_tokens / 1e6 * _PRICE['text_out'])
+    cost = round(img_cost + txt_cost, 4)
 
     log = {}
-    if os.path.exists(cost_log_path):
-        with open(cost_log_path, 'r') as f:
+    if os.path.exists(_COST_LOG):
+        with open(_COST_LOG, 'r') as f:
             log = json.load(f)
 
     today = str(date.today())
     if today not in log:
         log[today] = {}
     log[today][lang] = {
-        'img_in': img_in_tokens, 'img_out': img_out_tokens,
+        'img_count': img_count,
         'txt_in': txt_in_tokens, 'txt_out': txt_out_tokens,
-        'cost_usd': round(cost, 4),
+        'cost_usd': cost,
     }
 
-    # 오늘 전체 합계 (_daily_total_usd는 float이므로 dict만 필터링)
     daily_total = sum(v['cost_usd'] for v in log[today].values() if isinstance(v, dict) and 'cost_usd' in v)
     log[today]['_daily_total_usd'] = round(daily_total, 4)
 
-    with open(cost_log_path, 'w') as f:
+    with open(_COST_LOG, 'w') as f:
         json.dump(log, f, indent=2, ensure_ascii=False)
 
-    print(f"💰 비용 추정: ${cost:.4f} (이미지 {img_out_tokens} output tokens)")
+    print(f"💰 비용: ${cost:.4f} (Imagen4 {img_count}장 × $0.03)")
     print(f"💰 오늘 누적: ${daily_total:.4f}")
     return cost
 
 # -------------------------------------------------------------------
-# 아이콘 생성 (Gemini, 병렬, 1K 최소 크기)
+# 아이콘 생성 (Imagen4 via Vertex AI, 병렬)
 # -------------------------------------------------------------------
-def generate_single_icon(client, word, lang_hint=""):
+def generate_single_icon_imagen(word, lang_hint=""):
     prompt = (
         f"A single minimalist flat design icon representing '{word}' ({lang_hint}). "
         "Clean vector art style, soft pastel colors, centered on a pure white background. "
         "NO TEXT, NO LETTERS, NO LABELS, NO NUMBERS."
     )
     try:
-        response = client.models.generate_content(
-            model='gemini-3.1-flash-image-preview',
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                response_modalities=['IMAGE'],
-                image_config=types.ImageConfig(
-                    image_size='1K',
-                    aspect_ratio='1:1',
-                )
-            )
+        client = _get_imagen_client()
+        response = client.models.generate_images(
+            model="imagen-4.0-generate-001",
+            prompt=prompt,
+            config=types.GenerateImagesConfig(
+                number_of_images=1,
+                aspect_ratio="1:1",
+            ),
         )
-        u = response.usage_metadata
-        for part in response.candidates[0].content.parts:
-            if hasattr(part, 'inline_data') and part.inline_data:
-                img = Image.open(io.BytesIO(part.inline_data.data)).convert("RGBA")
-                w, h = img.size
-                s = min(w, h)
-                img = img.crop(((w-s)//2, (h-s)//2, (w+s)//2, (h+s)//2))
-                return img.resize((ICON_H, ICON_H), Image.LANCZOS), u.prompt_token_count, u.candidates_token_count
-        return None, 0, 0
+        if not response.generated_images:
+            return None
+        img = Image.open(io.BytesIO(response.generated_images[0].image.image_bytes)).convert("RGBA")
+        w, h = img.size
+        s = min(w, h)
+        img = img.crop(((w-s)//2, (h-s)//2, (w+s)//2, (h+s)//2))
+        return img.resize((ICON_H, ICON_H), Image.LANCZOS)
     except Exception as e:
         print(f"  ⚠️ '{word}' 아이콘 생성 실패: {e}")
-        return None, 0, 0
+        return None
 
 def generate_icons(client, vocab_data, lang, lang_hint="",
                    txt_in_tokens=0, txt_out_tokens=0):
     """
+    client: Gemini 텍스트 클라이언트 (단어 생성용, 아이콘엔 미사용)
     lang: 비용 로그용 언어 코드 (예: 'es', 'ja', 'zh')
     txt_in/out_tokens: 단어 생성 토큰 (함께 기록)
     """
-    print(f"🎨 Gemini로 아이콘 {len(vocab_data)}개를 병렬 생성 중 (1K 1:1)...")
+    print(f"🎨 Imagen4로 아이콘 {len(vocab_data)}개를 병렬 생성 중...")
     words = [item['word'] for item in vocab_data]
-    icons   = [None] * len(words)
-    total_img_in  = 0
-    total_img_out = 0
+    icons = [None] * len(words)
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=9) as executor:
         future_to_idx = {
-            executor.submit(generate_single_icon, client, w, lang_hint): i
+            executor.submit(generate_single_icon_imagen, w, lang_hint): i
             for i, w in enumerate(words)
         }
         for future in concurrent.futures.as_completed(future_to_idx):
             idx = future_to_idx[future]
-            icon, in_tok, out_tok = future.result()
-            icons[idx] = icon
-            total_img_in  += in_tok
-            total_img_out += out_tok
-            print(f"  {'✅' if icon else '❌'} [{idx+1}/9] {words[idx]}")
+            icons[idx] = future.result()
+            print(f"  {'✅' if icons[idx] else '❌'} [{idx+1}/9] {words[idx]}")
 
     success = sum(1 for ic in icons if ic is not None)
     print(f"🎨 아이콘 생성 완료: {success}/{len(words)}개 성공")
 
-    log_cost(lang, total_img_in, total_img_out, txt_in_tokens, txt_out_tokens)
+    log_cost(lang, success, txt_in_tokens, txt_out_tokens)
     return icons
 
 # -------------------------------------------------------------------

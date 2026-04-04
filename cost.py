@@ -70,7 +70,8 @@ def _month_stats(prefix: str, log: dict) -> dict:
         tts_chars    += day_data.get('tts', {}).get('chars', 0)
         for lang in per_lang:
             if lang in day_data and isinstance(day_data[lang], dict):
-                per_lang[lang] += day_data[lang].get('cost_usd', 0.0)
+                entry = day_data[lang]
+                per_lang[lang] += entry.get('cost_usd', 0.0)
 
     # TTS 비용: 월 누적 기준으로 무료 티어 적용
     billable_chars = max(0, tts_chars - TTS_FREE_CHARS)
