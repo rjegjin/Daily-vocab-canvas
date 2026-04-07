@@ -138,8 +138,10 @@ def cmd_dashboard():
     print(f"\n{'─'*46}")
     print(f"  조절 명령어:")
     print(f"  python cost.py --budget <금액>     예산 변경")
-    print(f"  python cost.py --disable es|ja|zh  언어 비활성화")
-    print(f"  python cost.py --enable  es|ja|zh  언어 활성화")
+    print(f"  python cost.py --disable all        전체 언어 비활성화")
+    print(f"  python cost.py --enable  all        전체 언어 활성화")
+    print(f"  python cost.py --disable es|ja|zh  언어 개별 비활성화")
+    print(f"  python cost.py --enable  es|ja|zh  언어 개별 활성화")
     print(f"  python cost.py --disable tts        TTS 끄기")
     print(f"  python cost.py --history            일별 내역")
     print(f"{'='*46}\n")
@@ -199,7 +201,11 @@ def main():
             print("❌ 사용법: python cost.py --disable es|ja|zh|tts")
             return
         cfg = _load_budget()
-        if target == 'tts':
+        if target == 'all':
+            for lang in ('es', 'ja', 'zh'):
+                cfg['lang_enabled'][lang] = False
+            print("🔴 전체 언어 비활성화 (ES / JA / ZH)")
+        elif target == 'tts':
             cfg['tts_enabled'] = False
             print("🔴 TTS 비활성화")
         elif target in ('es', 'ja', 'zh'):
@@ -219,7 +225,11 @@ def main():
             print("❌ 사용법: python cost.py --enable es|ja|zh|tts")
             return
         cfg = _load_budget()
-        if target == 'tts':
+        if target == 'all':
+            for lang in ('es', 'ja', 'zh'):
+                cfg['lang_enabled'][lang] = True
+            print("✅ 전체 언어 활성화 (ES / JA / ZH)")
+        elif target == 'tts':
             cfg['tts_enabled'] = True
             print("✅ TTS 활성화")
         elif target in ('es', 'ja', 'zh'):
