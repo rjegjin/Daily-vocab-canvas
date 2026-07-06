@@ -13,23 +13,17 @@ import json
 import sys
 from datetime import datetime, date
 from pathlib import Path
-from dotenv import load_dotenv
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes, MessageHandler, filters
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from bot_common import load_secrets, require_env, run_bot
 
 # -------------------------------------------------------------------
 # 경로 및 환경 변수 설정
 # -------------------------------------------------------------------
+load_secrets()
 PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
-# .secrets/.env 우선 로드
-dotenv_path = os.path.join(os.path.dirname(PROJECT_DIR), ".secrets", ".env")
-if os.path.exists(dotenv_path):
-    load_dotenv(dotenv_path)
-else:
-    load_dotenv()
-
-TOKEN   = os.getenv("VOCAB_BOT_TOKEN")
+TOKEN   = require_env("VOCAB_BOT_TOKEN")
 VENV_PY = sys.executable
 
 SCRIPTS = {
@@ -599,20 +593,15 @@ async def post_init(app: Application):
     log.info("스케줄러 시작 — 05:00 ES/JA/ZH 카드, 05:10 부가 학습 시리즈, 06:00 영어 플루언시, 06:20 JA/ZH 회화")
 
 def main():
-    if not TOKEN:
-        print("❌ VOCAB_BOT_TOKEN 환경 변수가 없습니다.")
-        return
-    app = Application.builder().token(TOKEN).post_init(post_init).build()
-    app.add_handler(CommandHandler("start",  cmd_manage))
-    app.add_handler(CommandHandler("manage", cmd_manage))
-    app.add_handler(CommandHandler("writing_feedback", cmd_writing_feedback))
-    app.add_handler(CallbackQueryHandler(handle_callback))
-    
-    # 텍스트 메뉴 핸들러 추가
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text_menu))
-    
+    handlers = [
+        CommandHandler("start",  cmd_manage),
+        CommandHandler("manage", cmd_manage),
+        CommandHandler("writing_feedback", cmd_writing_feedback),
+        CallbackQueryHandler(handle_callback),
+        MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text_menu),
+    ]
     print("🚀 Vocab Manager Bot Started")
-    app.run_polling(drop_pending_updates=True)
+    run_bot(TOKEN, handlers, post_init=post_init)
 
 if __name__ == "__main__":
     main()
