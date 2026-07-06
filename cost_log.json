@@ -8,5 +8,459 @@
       "cost_usd": 0.7897
     },
     "_daily_total_usd": 0.7897
+  },
+  "2026-04-02": {
+    "es": {
+      "img_in": 411,
+      "img_out": 13176,
+      "txt_in": 180,
+      "txt_out": 437,
+      "cost_usd": 0.7915
+    },
+    "_daily_total_usd": 2.3059,
+    "ja": {
+      "img_in": 355,
+      "img_out": 11935,
+      "txt_in": 168,
+      "txt_out": 437,
+      "cost_usd": 0.717
+    },
+    "zh": {
+      "img_in": 398,
+      "img_out": 13275,
+      "txt_in": 172,
+      "txt_out": 410,
+      "cost_usd": 0.7974
+    }
+  },
+  "2026-04-03": {
+    "es": {
+      "img_in": 407,
+      "img_out": 13191,
+      "txt_in": 212,
+      "txt_out": 449,
+      "cost_usd": 0.7924
+    },
+    "_daily_total_usd": 2.3787,
+    "ja": {
+      "img_in": 401,
+      "img_out": 13192,
+      "txt_in": 224,
+      "txt_out": 430,
+      "cost_usd": 0.7924
+    },
+    "zh": {
+      "img_in": 398,
+      "img_out": 13218,
+      "txt_in": 199,
+      "txt_out": 400,
+      "cost_usd": 0.7939
+    }
+  },
+  "2026-04-04": {
+    "ja": {
+      "img_in": 400,
+      "img_out": 13161,
+      "txt_in": 287,
+      "txt_out": 505,
+      "cost_usd": 0.7907
+    },
+    "_daily_total_usd": 1.5792,
+    "zh": {
+      "img_in": 399,
+      "img_out": 13125,
+      "txt_in": 258,
+      "txt_out": 496,
+      "cost_usd": 0.7885
+    }
+  },
+  "2026-04-05": {
+    "es": {
+      "img_count": 9,
+      "txt_in": 306,
+      "txt_out": 517,
+      "cost_usd": 0.2709
+    },
+    "_daily_total_usd": 0.8126,
+    "tts": {
+      "chars": 292,
+      "cost_usd": 0.0
+    },
+    "ja": {
+      "img_count": 9,
+      "txt_in": 342,
+      "txt_out": 542,
+      "cost_usd": 0.2709
+    },
+    "zh": {
+      "img_count": 9,
+      "txt_in": 317,
+      "txt_out": 501,
+      "cost_usd": 0.2708
+    }
+  },
+  "2026-04-06": {
+    "es": {
+      "img_count": 9,
+      "txt_in": 324,
+      "txt_out": 501,
+      "cost_usd": 0.2708
+    },
+    "_daily_total_usd": 0.8125,
+    "tts": {
+      "chars": 184,
+      "cost_usd": 0.0
+    },
+    "ja": {
+      "img_count": 9,
+      "txt_in": 372,
+      "txt_out": 499,
+      "cost_usd": 0.2708
+    },
+    "zh": {
+      "img_count": 9,
+      "txt_in": 347,
+      "txt_out": 518,
+      "cost_usd": 0.2709
+    }
+  },
+  "2026-04-07": {
+    "es": {
+      "img_count": 9,
+      "txt_in": 348,
+      "txt_out": 525,
+      "cost_usd": 0.2709
+    },
+    "_daily_total_usd": 0.8125,
+    "tts": {
+      "chars": 170,
+      "cost_usd": 0.0
+    },
+    "ja": {
+      "img_count": 9,
+      "txt_in": 399,
+      "txt_out": 495,
+      "cost_usd": 0.2708
+    },
+    "zh": {
+      "img_count": 9,
+      "txt_in": 375,
+      "txt_out": 485,
+      "cost_usd": 0.2708
+    }
+  },
+  "2026-04-08": {
+    "tts": {
+      "chars": 175,
+      "cost_usd": 0.0
+    }
+  },
+  "2026-04-20": {
+    "zh": {
+      "img_count": 9,
+      "txt_in": 404,
+      "txt_out": 497,
+      "cost_usd": 0.2708
+    },
+    "_daily_total_usd": 0.8126,
+    "ja": {
+      "img_count": 9,
+      "txt_in": 425,
+      "txt_out": 521,
+      "cost_usd": 0.2709
+    },
+    "es": {
+      "img_count": 9,
+      "txt_in": 374,
+      "txt_out": 518,
+      "cost_usd": 0.2709
+    }
+  },
+  "2026-04-23": {
+    "zh": {
+      "img_count": 9,
+      "txt_in": 430,
+      "txt_out": 511,
+      "cost_usd": 0.2709
+    },
+    "_daily_total_usd": 0.8127,
+    "ja": {
+      "img_count": 9,
+      "txt_in": 455,
+      "txt_out": 512,
+      "cost_usd": 0.2709
+    },
+    "es": {
+      "img_count": 9,
+      "txt_in": 403,
+      "txt_out": 518,
+      "cost_usd": 0.2709
+    }
+  },
+  "2026-04-24": {
+    "es": {
+      "img_count": 9,
+      "txt_in": 433,
+      "txt_out": 534,
+      "cost_usd": 0.2709
+    },
+    "_daily_total_usd": 0.8127,
+    "ja": {
+      "img_count": 9,
+      "txt_in": 487,
+      "txt_out": 496,
+      "cost_usd": 0.2709
+    },
+    "zh": {
+      "img_count": 9,
+      "txt_in": 461,
+      "txt_out": 513,
+      "cost_usd": 0.2709
+    }
+  },
+  "2026-04-26": {
+    "es": {
+      "img_count": 9,
+      "txt_in": 462,
+      "txt_out": 534,
+      "cost_usd": 0.2709
+    },
+    "_daily_total_usd": 0.8127,
+    "ja": {
+      "img_count": 9,
+      "txt_in": 517,
+      "txt_out": 520,
+      "cost_usd": 0.2709
+    },
+    "zh": {
+      "img_count": 9,
+      "txt_in": 494,
+      "txt_out": 488,
+      "cost_usd": 0.2709
+    }
+  },
+  "2026-04-27": {
+    "es": {
+      "img_count": 9,
+      "txt_in": 489,
+      "txt_out": 537,
+      "cost_usd": 0.2709
+    },
+    "_daily_total_usd": 0.8127,
+    "ja": {
+      "img_count": 9,
+      "txt_in": 550,
+      "txt_out": 516,
+      "cost_usd": 0.2709
+    },
+    "zh": {
+      "img_count": 9,
+      "txt_in": 521,
+      "txt_out": 518,
+      "cost_usd": 0.2709
+    }
+  },
+  "2026-04-28": {
+    "es": {
+      "img_count": 9,
+      "txt_in": 521,
+      "txt_out": 537,
+      "cost_usd": 0.2709
+    },
+    "_daily_total_usd": 0.8127,
+    "ja": {
+      "img_count": 9,
+      "txt_in": 581,
+      "txt_out": 510,
+      "cost_usd": 0.2709
+    },
+    "zh": {
+      "img_count": 9,
+      "txt_in": 550,
+      "txt_out": 514,
+      "cost_usd": 0.2709
+    }
+  },
+  "2026-04-29": {
+    "ja": {
+      "img_count": 9,
+      "txt_in": 612,
+      "txt_out": 541,
+      "cost_usd": 0.271
+    },
+    "_daily_total_usd": 0.7528,
+    "es": {
+      "img_count": 8,
+      "txt_in": 548,
+      "txt_out": 507,
+      "cost_usd": 0.2409
+    },
+    "zh": {
+      "img_count": 8,
+      "txt_in": 576,
+      "txt_out": 489,
+      "cost_usd": 0.2409
+    }
+  },
+  "2026-05-01": {
+    "es": {
+      "img_count": 9,
+      "txt_in": 569,
+      "txt_out": 527,
+      "cost_usd": 0.2709
+    },
+    "_daily_total_usd": 0.2709
+  },
+  "2026-05-02": {
+    "ja": {
+      "img_count": 9,
+      "txt_in": 674,
+      "txt_out": 522,
+      "cost_usd": 0.271
+    },
+    "_daily_total_usd": 0.6928,
+    "zh": {
+      "img_count": 5,
+      "txt_in": 595,
+      "txt_out": 495,
+      "cost_usd": 0.1509
+    },
+    "es": {
+      "img_count": 9,
+      "txt_in": 595,
+      "txt_out": 523,
+      "cost_usd": 0.2709
+    },
+    "tts": {
+      "chars": 172,
+      "cost_usd": 0.0
+    }
+  },
+  "2026-05-03": {
+    "ja": {
+      "img_count": 1,
+      "txt_in": 709,
+      "txt_out": 530,
+      "cost_usd": 0.021
+    },
+    "_daily_total_usd": 0.0628,
+    "es": {
+      "img_count": 1,
+      "txt_in": 616,
+      "txt_out": 529,
+      "cost_usd": 0.0209
+    },
+    "zh": {
+      "img_count": 1,
+      "txt_in": 616,
+      "txt_out": 492,
+      "cost_usd": 0.0209
+    }
+  },
+  "2026-05-04": {
+    "ja": {
+      "img_count": 1,
+      "txt_in": 735,
+      "txt_out": 525,
+      "cost_usd": 0.021
+    },
+    "_daily_total_usd": 0.0628,
+    "es": {
+      "img_count": 1,
+      "txt_in": 616,
+      "txt_out": 522,
+      "cost_usd": 0.0209
+    },
+    "zh": {
+      "img_count": 1,
+      "txt_in": 645,
+      "txt_out": 511,
+      "cost_usd": 0.0209
+    }
+  },
+  "2026-05-05": {
+    "ja": {
+      "img_count": 3,
+      "txt_in": 955,
+      "txt_out": 738,
+      "cost_usd": 0.0613
+    },
+    "_daily_total_usd": 0.1838,
+    "zh": {
+      "img_count": 3,
+      "txt_in": 877,
+      "txt_out": 700,
+      "cost_usd": 0.0613
+    },
+    "es": {
+      "img_count": 3,
+      "txt_in": 769,
+      "txt_out": 646,
+      "cost_usd": 0.0612
+    }
+  },
+  "2026-06-02": {
+    "es": {
+      "img_count": 3,
+      "txt_in": 798,
+      "txt_out": 631,
+      "cost_usd": 0.0611
+    },
+    "_daily_total_usd": 0.0611
+  },
+  "2026-06-09": {
+    "es_test": {
+      "providers": [
+        {
+          "provider": "openai_text",
+          "cost_usd": 0.003432,
+          "model": "gpt-5-nano",
+          "txt_in": 67,
+          "txt_out": 8571
+        },
+        {
+          "provider": "openai_text",
+          "cost_usd": 0.000209,
+          "model": "gpt-4.1-nano",
+          "txt_in": 68,
+          "txt_out": 506
+        }
+      ],
+      "cost_usd": 0.003641,
+      "img_count": 0,
+      "txt_in": 135,
+      "txt_out": 9077
+    },
+    "_daily_total_usd": 0.008656,
+    "openai_test": {
+      "providers": [
+        {
+          "provider": "openai_image",
+          "cost_usd": 0.005,
+          "model": "gpt-image-1-mini",
+          "quality": "low",
+          "img_count": 1
+        }
+      ],
+      "cost_usd": 0.005,
+      "img_count": 1,
+      "txt_in": 0,
+      "txt_out": 0
+    },
+    "en_test": {
+      "providers": [
+        {
+          "provider": "openai_text",
+          "cost_usd": 1.5e-05,
+          "model": "gpt-4.1-nano",
+          "txt_in": 33,
+          "txt_out": 30
+        }
+      ],
+      "cost_usd": 1.5e-05,
+      "img_count": 0,
+      "txt_in": 33,
+      "txt_out": 30
+    }
   }
 }

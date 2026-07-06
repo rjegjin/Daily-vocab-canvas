@@ -3,3 +3,8 @@ __pycache__/
 *.jpg
 *.png
 cron_log.txt
+run_logs/
+*.log
+*.lock
+repomix-output.md
+*.bak

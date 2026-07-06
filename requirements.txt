@@ -3,3 +3,4 @@ python-dotenv
 pillow
 textwrap3
 requests
+openai

@@ -2,8 +2,8 @@ name: Daily Japanese Vocab Card
 
 on:
   schedule:
-    # 21:00 UTC = 06:00 KST
-    - cron: '0 21 * * *'
+    # 20:00 UTC = 05:00 KST
+    - cron: '0 20 * * *'
   workflow_dispatch:
 
 permissions:
@@ -28,6 +28,17 @@ jobs:
         pip install -r requirements.txt
         sudo apt-get install -y fonts-noto-cjk
 
+    - name: Configure Google service account
+      env:
+        GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+      run: |
+        if [ -z "$GOOGLE_SERVICE_ACCOUNT_JSON" ]; then
+          echo "GOOGLE_SERVICE_ACCOUNT_JSON secret is required for Imagen/Vertex AI" >&2
+          exit 1
+        fi
+        printf '%s' "$GOOGLE_SERVICE_ACCOUNT_JSON" > "$RUNNER_TEMP/service_key.json"
+        echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/service_key.json" >> "$GITHUB_ENV"
+
     - name: Run script
       env:
         GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
@@ -39,8 +50,8 @@ jobs:
       run: |
         git config --global user.name 'github-actions[bot]'
         git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-        git add learned_ja.txt
+        git add learned_data_ja.json
         if ! git diff --staged --quiet; then
-          git commit -m "chore: update learned_ja.txt [skip ci]"
+          git commit -m "chore: update Japanese learned data [skip ci]"
           git push
         fi

@@ -6,9 +6,13 @@ import io
 import os
 import json
 import textwrap
-import concurrent.futures
 import requests
 import math
+import fcntl
+import hashlib
+import time
+import tempfile
+import base64
 from datetime import datetime, date
 from PIL import Image, ImageDraw, ImageFont
 from google.genai import types
@@ -102,7 +106,7 @@ LANG_THEMES = {
 _PRICE = {
     'text_in':   0.25,   # $/1M tokens
     'text_out':  1.50,   # $/1M tokens
-    'img_per':   0.03,   # $/image (Imagen4 고정 단가)
+    'img_per':   0.02,   # $/image (Imagen 4 Fast 고정 단가)
 }
 
 # Vertex AI Imagen4 설정
@@ -111,6 +115,46 @@ _VERTEX_LOCATION = "us-central1"
 _KEY_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                          '.secrets', 'service_key.json')
 _imagen_client = None
+_IMAGEN_MODEL = "imagen-4.0-fast-generate-001"
+_ICON_CACHE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'icon_cache')
+_SERVICE_ACCOUNT_JSON_ENV = "GOOGLE_SERVICE_ACCOUNT_JSON"
+_OPENAI_TEXT_MODEL_DEFAULT = "gpt-4.1-nano"
+_OPENAI_IMAGE_MODEL_DEFAULT = "gpt-image-1-mini"
+_OPENAI_IMAGE_QUALITY_DEFAULT = "low"
+
+_OPENAI_TEXT_PRICE = {
+    "input": 0.10,
+    "output": 0.40,
+}
+_OPENAI_IMAGE_PRICE_LOW_1024 = {
+    "gpt-image-1-mini": 0.005,
+    "gpt-image-1": 0.011,
+    "gpt-image-1.5": 0.009,
+    "gpt-image-2": 0.006,
+}
+
+def _service_account_path() -> str:
+    env_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+    if env_path:
+        if os.path.exists(env_path):
+            return env_path
+        raise FileNotFoundError(f"GOOGLE_APPLICATION_CREDENTIALS points to missing file: {env_path}")
+
+    raw_json = os.getenv(_SERVICE_ACCOUNT_JSON_ENV)
+    if raw_json:
+        tmp_path = os.path.join(tempfile.gettempdir(), "vocab_service_key.json")
+        with open(tmp_path, "w", encoding="utf-8") as f:
+            f.write(raw_json)
+        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = tmp_path
+        return tmp_path
+
+    if os.path.exists(_KEY_PATH):
+        return _KEY_PATH
+
+    raise FileNotFoundError(
+        "Vertex service account key not found. Set GOOGLE_APPLICATION_CREDENTIALS "
+        f"or {_SERVICE_ACCOUNT_JSON_ENV}, or create {_KEY_PATH}."
+    )
 
 def _get_imagen_client():
     global _imagen_client
@@ -118,7 +162,7 @@ def _get_imagen_client():
         return _imagen_client
     import google.genai as genai
     credentials = service_account.Credentials.from_service_account_file(
-        _KEY_PATH,
+        _service_account_path(),
         scopes=["https://www.googleapis.com/auth/cloud-platform"],
     )
     _imagen_client = genai.Client(
@@ -133,13 +177,32 @@ _TTS_PRICE_PER_CHAR = 4.0 / 1_000_000
 
 _BUDGET_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'budget.json')
 _COST_LOG    = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'cost_log.json')
+_COST_LOCK   = f"{_COST_LOG}.lock"
+
+def _update_cost_log(mutator):
+    """cost_log.json 갱신을 프로세스 간 직렬화한다."""
+    with open(_COST_LOCK, 'w') as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        try:
+            log = {}
+            if os.path.exists(_COST_LOG):
+                with open(_COST_LOG, 'r') as f:
+                    log = json.load(f)
+            result = mutator(log)
+            tmp_path = f"{_COST_LOG}.tmp"
+            with open(tmp_path, 'w') as f:
+                json.dump(log, f, indent=2, ensure_ascii=False)
+            os.replace(tmp_path, _COST_LOG)
+            return result
+        finally:
+            fcntl.flock(lock, fcntl.LOCK_UN)
 
 # -------------------------------------------------------------------
 # 예산 읽기/쓰기
 # -------------------------------------------------------------------
 def load_budget() -> dict:
-    defaults = {'monthly_limit_usd': 50.0, 'tts_enabled': True,
-                'lang_enabled': {'es': True, 'ja': True, 'zh': True}}
+    defaults = {'monthly_limit_usd': 10.0, 'tts_enabled': True,
+                'lang_enabled': {'es': True, 'ja': True, 'zh': True, 'en': True}}
     if not os.path.exists(_BUDGET_FILE):
         return defaults
     with open(_BUDGET_FILE, 'r') as f:
@@ -211,86 +274,397 @@ def check_budget_exit(lang: str):
 
 def log_tts_chars(char_count: int):
     """TTS 글자 수를 cost_log.json에 기록"""
-    log = {}
-    if os.path.exists(_COST_LOG):
-        with open(_COST_LOG, 'r') as f:
-            log = json.load(f)
-    today = date.today().isoformat()
-    if today not in log:
-        log[today] = {}
-    tts = log[today].get('tts', {'chars': 0, 'cost_usd': 0.0})
-    tts['chars'] += char_count
-    # 월 누적 글자 수 (1M 이하 무료)
-    month_chars = monthly_tts_chars() + char_count
-    billable = max(0, month_chars - 1_000_000)
-    tts['cost_usd'] = round(billable * _TTS_PRICE_PER_CHAR, 6)
-    log[today]['tts'] = tts
-    with open(_COST_LOG, 'w') as f:
-        json.dump(log, f, indent=2, ensure_ascii=False)
+    def mutator(log):
+        today = date.today().isoformat()
+        if today not in log:
+            log[today] = {}
+        tts = log[today].get('tts', {'chars': 0, 'cost_usd': 0.0})
+        tts['chars'] += char_count
+
+        prefix = date.today().strftime('%Y-%m')
+        month_chars = 0
+        for k, v in log.items():
+            if k.startswith(prefix) and isinstance(v, dict):
+                month_chars += v.get('tts', {}).get('chars', 0)
+        billable = max(0, month_chars - 1_000_000)
+        tts['cost_usd'] = round(billable * _TTS_PRICE_PER_CHAR, 6)
+        log[today]['tts'] = tts
+        return tts
+
+    return _update_cost_log(mutator)
 
 # -------------------------------------------------------------------
 # 비용 계산 & 로깅
 # -------------------------------------------------------------------
 def log_cost(lang, img_count, txt_in_tokens=0, txt_out_tokens=0):
-    """Imagen4 장당 $0.03 고정 + 텍스트 토큰 비용 기록"""
+    """Legacy Gemini/Imagen 비용 기록."""
     img_cost = img_count * _PRICE['img_per']
     txt_cost = (txt_in_tokens / 1e6 * _PRICE['text_in'] +
                 txt_out_tokens / 1e6 * _PRICE['text_out'])
     cost = round(img_cost + txt_cost, 4)
 
-    log = {}
-    if os.path.exists(_COST_LOG):
-        with open(_COST_LOG, 'r') as f:
-            log = json.load(f)
+    def mutator(log):
+        today = str(date.today())
+        if today not in log:
+            log[today] = {}
+        log[today][lang] = {
+            'img_count': img_count,
+            'txt_in': txt_in_tokens, 'txt_out': txt_out_tokens,
+            'cost_usd': cost,
+        }
 
-    today = str(date.today())
-    if today not in log:
-        log[today] = {}
-    log[today][lang] = {
-        'img_count': img_count,
-        'txt_in': txt_in_tokens, 'txt_out': txt_out_tokens,
-        'cost_usd': cost,
-    }
+        daily_total = sum(v['cost_usd'] for v in log[today].values() if isinstance(v, dict) and 'cost_usd' in v)
+        log[today]['_daily_total_usd'] = round(daily_total, 4)
+        return daily_total
 
-    daily_total = sum(v['cost_usd'] for v in log[today].values() if isinstance(v, dict) and 'cost_usd' in v)
-    log[today]['_daily_total_usd'] = round(daily_total, 4)
+    daily_total = _update_cost_log(mutator)
 
-    with open(_COST_LOG, 'w') as f:
-        json.dump(log, f, indent=2, ensure_ascii=False)
-
-    print(f"💰 비용: ${cost:.4f} (Imagen4 {img_count}장 × $0.03)")
+    print(f"💰 비용: ${cost:.4f} (img={img_count}, txt_in={txt_in_tokens}, txt_out={txt_out_tokens})")
     print(f"💰 오늘 누적: ${daily_total:.4f}")
     return cost
 
-# -------------------------------------------------------------------
-# 아이콘 생성 (Imagen4 via Vertex AI, 병렬)
-# -------------------------------------------------------------------
-def generate_single_icon_imagen(word, lang_hint=""):
-    prompt = (
-        f"A single minimalist flat design icon representing '{word}' ({lang_hint}). "
-        "Clean vector art style, soft pastel colors, centered on a pure white background. "
-        "NO TEXT, NO LETTERS, NO LABELS, NO NUMBERS."
-    )
+def log_provider_cost(lang: str, provider: str, cost_usd: float, **details):
+    """Provider-specific cost entry. Multiple calls for one lang/day are accumulated."""
+    cost = round(cost_usd, 6)
+
+    def mutator(log):
+        today = str(date.today())
+        if today not in log:
+            log[today] = {}
+        entry = log[today].get(lang, {})
+        if not isinstance(entry, dict):
+            entry = {}
+        providers = entry.get("providers", [])
+        providers.append({"provider": provider, "cost_usd": cost, **details})
+        entry["providers"] = providers
+        entry["cost_usd"] = round(sum(p.get("cost_usd", 0.0) for p in providers), 6)
+        entry["img_count"] = entry.get("img_count", 0) + int(details.get("img_count", 0))
+        entry["txt_in"] = entry.get("txt_in", 0) + int(details.get("txt_in", 0))
+        entry["txt_out"] = entry.get("txt_out", 0) + int(details.get("txt_out", 0))
+        log[today][lang] = entry
+        daily_total = sum(v['cost_usd'] for v in log[today].values() if isinstance(v, dict) and 'cost_usd' in v)
+        log[today]['_daily_total_usd'] = round(daily_total, 6)
+        return daily_total
+
+    daily_total = _update_cost_log(mutator)
+    print(f"💰 {provider} 비용: ${cost:.6f}")
+    print(f"💰 오늘 누적: ${daily_total:.6f}")
+    return cost
+
+def _strip_json_text(text: str):
+    raw = text.strip()
+    if raw.startswith("```json"):
+        raw = raw[7:]
+    elif raw.startswith("```"):
+        raw = raw[3:]
+    if raw.endswith("```"):
+        raw = raw[:-3]
+    raw = raw.strip()
     try:
-        client = _get_imagen_client()
-        response = client.models.generate_images(
-            model="imagen-4.0-generate-001",
-            prompt=prompt,
-            config=types.GenerateImagesConfig(
-                number_of_images=1,
-                aspect_ratio="1:1",
-            ),
-        )
-        if not response.generated_images:
-            return None
-        img = Image.open(io.BytesIO(response.generated_images[0].image.image_bytes)).convert("RGBA")
-        w, h = img.size
-        s = min(w, h)
-        img = img.crop(((w-s)//2, (h-s)//2, (w+s)//2, (h+s)//2))
-        return img.resize((ICON_H, ICON_H), Image.LANCZOS)
-    except Exception as e:
-        print(f"  ⚠️ '{word}' 아이콘 생성 실패: {e}")
+        return json.loads(raw)
+    except json.JSONDecodeError:
+        start = raw.find("{")
+        arr_start = raw.find("[")
+        if arr_start != -1 and (start == -1 or arr_start < start):
+            start = arr_start
+        end = max(raw.rfind("}"), raw.rfind("]"))
+        if start == -1 or end == -1 or end <= start:
+            raise
+        return json.loads(raw[start:end + 1])
+
+def _response_text(response):
+    text = getattr(response, "output_text", None)
+    if text:
+        return text
+    chunks = []
+    for item in getattr(response, "output", []) or []:
+        for content in getattr(item, "content", []) or []:
+            value = getattr(content, "text", None)
+            if value:
+                chunks.append(value)
+    return "\n".join(chunks)
+
+def _usage_tokens(response):
+    usage = getattr(response, "usage", None)
+    if not usage:
+        return 0, 0
+    in_tokens = getattr(usage, "input_tokens", 0) or getattr(usage, "prompt_tokens", 0) or 0
+    out_tokens = getattr(usage, "output_tokens", 0) or getattr(usage, "completion_tokens", 0) or 0
+    return int(in_tokens), int(out_tokens)
+
+def generate_vocab_openai(prompt: str, required_keys: set, lang: str):
+    """Generate vocab JSON array through a low-cost OpenAI text model."""
+    from openai import OpenAI
+
+    model = os.getenv("VOCAB_OPENAI_TEXT_MODEL", _OPENAI_TEXT_MODEL_DEFAULT)
+    client = OpenAI()
+    wrapped_prompt = f"""
+{prompt}
+
+Return a JSON object with exactly one key "items".
+"items" must be the requested JSON array. Do not include markdown.
+"""
+    response = client.responses.create(
+        model=model,
+        input=wrapped_prompt,
+    )
+    data = _strip_json_text(_response_text(response))
+    if isinstance(data, dict):
+        data = data.get("items") or data.get("words") or data.get("data")
+    if not isinstance(data, list) or len(data) != 9:
+        raise ValueError("OpenAI 응답이 9개 JSON 배열이 아닙니다.")
+    for idx, item in enumerate(data, start=1):
+        missing = required_keys - set(item)
+        if missing:
+            raise ValueError(f"{idx}번째 항목 필수 필드 누락: {sorted(missing)}")
+    in_tokens, out_tokens = _usage_tokens(response)
+    cost = (in_tokens / 1_000_000 * _OPENAI_TEXT_PRICE["input"] +
+            out_tokens / 1_000_000 * _OPENAI_TEXT_PRICE["output"])
+    log_provider_cost(
+        lang,
+        "openai_text",
+        cost,
+        model=model,
+        txt_in=in_tokens,
+        txt_out=out_tokens,
+    )
+    print(f"✅ OpenAI 단어 9개 생성 완료 ({model}): {[d['word'] for d in data]}")
+    return data, in_tokens, out_tokens
+
+# -------------------------------------------------------------------
+# 아이콘 생성 (Imagen 4 Fast 3x3 sheet via Vertex AI)
+# -------------------------------------------------------------------
+def _icon_cache_path(lang: str, word: str) -> str:
+    os.makedirs(_ICON_CACHE_DIR, exist_ok=True)
+    digest = hashlib.sha1(f"{lang}:{word}".encode("utf-8")).hexdigest()[:16]
+    return os.path.join(_ICON_CACHE_DIR, f"{lang}_{digest}.png")
+
+def _load_cached_icon(lang: str, word: str):
+    path = _icon_cache_path(lang, word)
+    if not os.path.exists(path):
         return None
+    try:
+        icon = Image.open(path).convert("RGBA").resize((ICON_H, ICON_H), Image.LANCZOS)
+        return _remove_sheet_artifacts(icon)
+    except Exception as e:
+        print(f"  ⚠️ 캐시 로드 실패 '{word}': {e}")
+        return None
+
+def _save_cached_icon(lang: str, word: str, icon: Image.Image):
+    try:
+        icon.save(_icon_cache_path(lang, word), "PNG")
+    except Exception as e:
+        print(f"  ⚠️ 캐시 저장 실패 '{word}': {e}")
+
+def _icon_concept(item: dict) -> str:
+    return (
+        item.get('visual')
+        or item.get('visual_hint')
+        or item.get('meaning')
+        or item.get('word')
+        or 'simple object'
+    )
+
+def _build_sheet_prompt(concepts, lang_hint: str) -> str:
+    concept_line = " | ".join(concepts)
+    return f"""
+Create one square image containing exactly {len(concepts)} large minimalist flat pictogram icons for vocabulary flashcards.
+Arrange them in one horizontal row from left to right, matching these visual concepts:
+{concept_line}
+
+Important:
+- Draw only pictures of the visual concepts.
+- The final image must contain pictures only.
+- No text, no letters, no numbers, no labels, no captions, no signs, no watermarks, no writing systems.
+- No divider lines, no dashed guide lines, no crop marks, no frames.
+- Do not make a worksheet, contact sheet, template, chart, or grid.
+- Use three equal invisible columns, one icon per column.
+- Each icon should be large, centered, isolated, and easy to recognize after cropping.
+- If a concept is abstract, use a simple object metaphor instead of writing a word.
+- Leave wide empty white margins around each icon, especially near column boundaries.
+- Pure white background, soft pastel colors, clean educational flashcard style.
+- No borders, no panels, no drop shadows, no perspective.
+"""
+
+def _build_grid_prompt(concepts, lang_hint: str) -> str:
+    concept_lines = "\n".join(f"{idx + 1}. {concept}" for idx, concept in enumerate(concepts))
+    return f"""
+Create one square image containing exactly 9 large minimalist flat pictogram icons for vocabulary flashcards.
+Arrange them in a clean 3x3 grid in reading order, matching these visual concepts:
+{concept_lines}
+
+Important:
+- Draw only pictures of the visual concepts.
+- The final image must contain pictures only.
+- No text, no letters, no numbers, no labels, no captions, no signs, no watermarks, no writing systems.
+- No visible grid lines, divider lines, dashed guide lines, crop marks, frames, or panels.
+- Use nine equal invisible cells, one icon per cell.
+- Each icon should be large, centered, isolated, and easy to recognize after cropping.
+- If a concept is abstract, use a simple object metaphor instead of writing a word.
+- Leave wide empty white margins around each icon and near cell boundaries.
+- Pure white background, soft pastel colors, clean educational flashcard style.
+- No borders, no drop shadows, no perspective.
+"""
+
+def generate_icon_sheet_imagen(concepts, lang_hint=""):
+    prompt = _build_sheet_prompt(concepts, lang_hint)
+    delays = [0, 8, 20]
+
+    for attempt, delay in enumerate(delays, start=1):
+        if delay:
+            print(f"  ⏳ Imagen 재시도 대기 {delay}s ({attempt}/{len(delays)})")
+            time.sleep(delay)
+        try:
+            client = _get_imagen_client()
+            response = client.models.generate_images(
+                model=_IMAGEN_MODEL,
+                prompt=prompt,
+                config=types.GenerateImagesConfig(
+                    number_of_images=1,
+                    aspect_ratio="1:1",
+                ),
+            )
+            if not response.generated_images:
+                raise RuntimeError("이미지 응답이 비어 있습니다.")
+            return Image.open(io.BytesIO(response.generated_images[0].image.image_bytes)).convert("RGBA")
+        except Exception as e:
+            print(f"  ⚠️ Imagen sheet 생성 실패 ({attempt}/{len(delays)}): {e}")
+
+    return None
+
+def generate_icon_sheet_openai(concepts, lang_hint=""):
+    from openai import OpenAI
+
+    prompt = _build_grid_prompt(concepts, lang_hint)
+    model = os.getenv("VOCAB_OPENAI_IMAGE_MODEL", _OPENAI_IMAGE_MODEL_DEFAULT)
+    quality = os.getenv("VOCAB_OPENAI_IMAGE_QUALITY", _OPENAI_IMAGE_QUALITY_DEFAULT)
+    try:
+        client = OpenAI()
+        response = client.images.generate(
+            model=model,
+            prompt=prompt,
+            size="1024x1024",
+            quality=quality,
+            n=1,
+        )
+        image_b64 = response.data[0].b64_json
+        if not image_b64:
+            raise RuntimeError("OpenAI image 응답에 b64_json이 없습니다.")
+        return Image.open(io.BytesIO(base64.b64decode(image_b64))).convert("RGBA")
+    except Exception as e:
+        print(f"  ⚠️ OpenAI icon sheet 생성 실패: {e}")
+        return None
+
+def split_icon_sheet(sheet: Image.Image, count: int):
+    sheet_size = ICON_H * GRID
+    sheet = sheet.resize((sheet_size, sheet_size), Image.LANCZOS)
+    trim = max(6, ICON_H // 24)
+    icons = []
+
+    def _crop_cell(x0, y0):
+        crop = sheet.crop((x0 + trim, y0 + trim, x0 + ICON_H - trim, y0 + ICON_H - trim))
+        icon = crop.convert("RGBA").resize((ICON_H, ICON_H), Image.LANCZOS)
+        icon = _remove_sheet_artifacts(icon)
+        return _fit_icon_content(icon)
+
+    if count <= GRID:
+        y0 = (sheet_size - ICON_H) // 2
+        for i in range(count):
+            icons.append(_crop_cell(i * ICON_H, y0))
+        return icons
+
+    for i in range(count):
+        col, row = i % GRID, i // GRID
+        icons.append(_crop_cell(col * ICON_H, row * ICON_H))
+    return icons
+
+def _remove_sheet_artifacts(icon: Image.Image) -> Image.Image:
+    """Imagen이 그린 얇은 sheet guide line만 흰색으로 지운다."""
+    img = icon.convert("RGBA")
+    px = img.load()
+    w, h = img.size
+
+    def is_gray_guide(pixel):
+        r, g, b, a = pixel
+        if a < 20:
+            return False
+        return 130 <= r <= 245 and abs(r - g) <= 10 and abs(g - b) <= 10
+
+    guide_cols = [
+        x for x in range(w)
+        if sum(1 for y in range(h) if is_gray_guide(px[x, y])) > h * 0.45
+    ]
+    guide_rows = [
+        y for y in range(h)
+        if sum(1 for x in range(w) if is_gray_guide(px[x, y])) > w * 0.45
+    ]
+
+    for x in guide_cols:
+        for xx in range(max(0, x - 1), min(w, x + 2)):
+            for y in range(h):
+                px[xx, y] = (255, 255, 255, 255)
+    for y in guide_rows:
+        for yy in range(max(0, y - 1), min(h, y + 2)):
+            for x in range(w):
+                px[x, yy] = (255, 255, 255, 255)
+
+    margin = max(12, h // 8)
+    for y in list(range(margin)) + list(range(h - margin, h)):
+        dark_xs = []
+        for x in range(w):
+            r, g, b, a = px[x, y]
+            if a > 20 and max(r, g, b) < 190:
+                dark_xs.append(x)
+        if 8 <= len(dark_xs) <= w * 0.45 and max(dark_xs) - min(dark_xs) <= w * 0.55:
+            for yy in range(max(0, y - 1), min(h, y + 2)):
+                for x in range(w):
+                    r, g, b, a = px[x, yy]
+                    if a > 20 and max(r, g, b) < 210:
+                        px[x, yy] = (255, 255, 255, 255)
+
+    return img
+
+def _fit_icon_content(icon: Image.Image) -> Image.Image:
+    img = icon.convert("RGBA")
+    px = img.load()
+    w, h = img.size
+    xs = []
+    ys = []
+    for y in range(h):
+        for x in range(w):
+            r, g, b, a = px[x, y]
+            if a > 20 and min(r, g, b) < 245:
+                xs.append(x)
+                ys.append(y)
+
+    if not xs or not ys:
+        return img
+
+    x0, x1 = min(xs), max(xs)
+    y0, y1 = min(ys), max(ys)
+    content_w = x1 - x0 + 1
+    content_h = y1 - y0 + 1
+    if content_w < 8 or content_h < 8:
+        return img
+
+    side = int(max(content_w, content_h) * 1.35)
+    side = max(side, ICON_H // 2)
+    cx = (x0 + x1) // 2
+    cy = (y0 + y1) // 2
+
+    crop = Image.new("RGBA", (side, side), (255, 255, 255, 255))
+    left = cx - side // 2
+    top = cy - side // 2
+    src_box = (
+        max(0, left),
+        max(0, top),
+        min(w, left + side),
+        min(h, top + side),
+    )
+    paste_x = src_box[0] - left
+    paste_y = src_box[1] - top
+    crop.paste(img.crop(src_box), (paste_x, paste_y))
+    return crop.resize((ICON_H, ICON_H), Image.LANCZOS)
 
 def generate_icons(client, vocab_data, lang, lang_hint="",
                    txt_in_tokens=0, txt_out_tokens=0):
@@ -299,24 +673,78 @@ def generate_icons(client, vocab_data, lang, lang_hint="",
     lang: 비용 로그용 언어 코드 (예: 'es', 'ja', 'zh')
     txt_in/out_tokens: 단어 생성 토큰 (함께 기록)
     """
-    print(f"🎨 Imagen4로 아이콘 {len(vocab_data)}개를 병렬 생성 중...")
-    words = [item['word'] for item in vocab_data]
-    icons = [None] * len(words)
+    if os.getenv("VOCAB_IMAGE_PROVIDER", "openai").lower() == "openai":
+        return generate_icons_openai(vocab_data, lang, lang_hint)
+    return generate_icons_imagen(client, vocab_data, lang, lang_hint, txt_in_tokens, txt_out_tokens)
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=9) as executor:
-        future_to_idx = {
-            executor.submit(generate_single_icon_imagen, w, lang_hint): i
-            for i, w in enumerate(words)
-        }
-        for future in concurrent.futures.as_completed(future_to_idx):
-            idx = future_to_idx[future]
-            icons[idx] = future.result()
-            print(f"  {'✅' if icons[idx] else '❌'} [{idx+1}/9] {words[idx]}")
+def generate_icons_openai(vocab_data, lang, lang_hint=""):
+    words = [item['word'] for item in vocab_data]
+    concepts = [_icon_concept(item) for item in vocab_data]
+    model = os.getenv("VOCAB_OPENAI_IMAGE_MODEL", _OPENAI_IMAGE_MODEL_DEFAULT)
+    quality = os.getenv("VOCAB_OPENAI_IMAGE_QUALITY", _OPENAI_IMAGE_QUALITY_DEFAULT)
+    print(f"🎨 {model}({quality})로 3x3 icon sheet 1장을 생성 중...")
+
+    sheet = generate_icon_sheet_openai(concepts, lang_hint)
+    icons = []
+    billable_images = 0
+    if sheet:
+        icons = split_icon_sheet(sheet, len(words))
+        for word, icon in zip(words, icons):
+            _save_cached_icon(lang, word, icon)
+        billable_images = 1
+        print(f"🎨 OpenAI 3x3 sheet 생성 완료 → 아이콘 {len(icons)}개 crop")
+    else:
+        print("⚠️ OpenAI sheet 생성 실패, 기존 아이콘 캐시를 사용합니다.")
+        icons = [_load_cached_icon(lang, word) for word in words]
 
     success = sum(1 for ic in icons if ic is not None)
-    print(f"🎨 아이콘 생성 완료: {success}/{len(words)}개 성공")
+    for idx, word in enumerate(words):
+        print(f"  {'✅' if icons[idx] else '❌'} [{idx+1}/9] {word}")
 
-    log_cost(lang, success, txt_in_tokens, txt_out_tokens)
+    print(f"🎨 아이콘 준비 완료: {success}/{len(words)}개 사용 가능")
+    if billable_images:
+        image_cost = _OPENAI_IMAGE_PRICE_LOW_1024.get(model, 0.005)
+        log_provider_cost(
+            lang,
+            "openai_image",
+            image_cost,
+            model=model,
+            quality=quality,
+            img_count=billable_images,
+        )
+    return icons
+
+def generate_icons_imagen(client, vocab_data, lang, lang_hint="",
+                          txt_in_tokens=0, txt_out_tokens=0):
+    words = [item['word'] for item in vocab_data]
+    concepts = [_icon_concept(item) for item in vocab_data]
+    print(f"🎨 {_IMAGEN_MODEL}로 3-icon sheet 3장을 생성 중...")
+
+    billable_images = 0
+    icons = []
+
+    for batch_start in range(0, len(words), GRID):
+        batch_words = words[batch_start:batch_start + GRID]
+        batch_concepts = concepts[batch_start:batch_start + GRID]
+        sheet = generate_icon_sheet_imagen(batch_concepts, lang_hint)
+
+        if sheet:
+            batch_icons = split_icon_sheet(sheet, len(batch_words))
+            for word, icon in zip(batch_words, batch_icons):
+                _save_cached_icon(lang, word, icon)
+            icons.extend(batch_icons)
+            billable_images += 1
+            print(f"🎨 sheet 생성 완료: {batch_start // GRID + 1}/3 → 아이콘 {len(batch_icons)}개 crop")
+        else:
+            print(f"⚠️ sheet 생성 실패: {batch_start // GRID + 1}/3, 기존 아이콘 캐시를 사용합니다.")
+            icons.extend([_load_cached_icon(lang, word) for word in batch_words])
+
+    success = sum(1 for ic in icons if ic is not None)
+    for idx, word in enumerate(words):
+        print(f"  {'✅' if icons[idx] else '❌'} [{idx+1}/9] {word}")
+
+    print(f"🎨 아이콘 준비 완료: {success}/{len(words)}개 사용 가능")
+    log_cost(lang, billable_images, txt_in_tokens, txt_out_tokens)
     return icons
 
 # -------------------------------------------------------------------
@@ -361,6 +789,8 @@ def create_flashcard(icons, vocab_data, fields_fn, fonts, output_path, theme='de
             cursor_y = y0 + PAD
             for field in fields_fn(item, fonts):
                 text, font, fill, spacing, wrap = field
+                if not text:
+                    continue
                 if wrap:
                     draw_wrapped(cursor_y, text, font, spacing, fill)
                 else:
@@ -412,7 +842,7 @@ def send_to_telegram(image_path, token, chat_id):
 # -------------------------------------------------------------------
 # Google Text-to-Speech (음성 생성)
 # -------------------------------------------------------------------
-def generate_tts(text: str, lang_code: str, output_path: str):
+def generate_tts(text: str, lang_code: str, output_path: str, voice_name: str = None):
     """
     Google Cloud Text-to-Speech로 음성 파일 생성
 
@@ -425,15 +855,20 @@ def generate_tts(text: str, lang_code: str, output_path: str):
         성공 시 output_path, 실패 시 None
     """
     try:
-        # 서비스 계정 키 설정
-        key_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                                '.secrets', 'service_key.json')
-        os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = key_path
+        os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = _service_account_path()
 
         client = texttospeech.TextToSpeechClient()
 
         synthesis_input = texttospeech.SynthesisInput(text=text)
-        voice = texttospeech.VoiceSelectionParams(language_code=lang_code, ssml_gender=texttospeech.SsmlVoiceGender.NEUTRAL)
+        voice_kwargs = {
+            "language_code": lang_code,
+            "ssml_gender": texttospeech.SsmlVoiceGender.NEUTRAL,
+        }
+        if voice_name:
+            if not voice_name.startswith(f"{lang_code}-"):
+                raise ValueError(f"voice_name language mismatch: {voice_name} vs {lang_code}")
+            voice_kwargs["name"] = voice_name
+        voice = texttospeech.VoiceSelectionParams(**voice_kwargs)
         audio_config = texttospeech.AudioConfig(audio_encoding=texttospeech.AudioEncoding.MP3)
 
         response = client.synthesize_speech(input=synthesis_input, voice=voice, audio_config=audio_config)

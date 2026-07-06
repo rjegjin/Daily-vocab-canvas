@@ -7,7 +7,7 @@ AI 기반 매일 단어장 자동 생성 및 전송 봇입니다. Gemini 3.0 Fla
 - **AI 일러스트 생성**: Imagen 4를 이용해 각 단어에 어울리는 미니멀 벡터 아이콘 생성.
 - **전문적인 레이아웃**: Pillow 라이브러리로 텍스트와 이미지를 합성하여 깔끔한 3x3 격자 카드 완성.
 - **자동화된 배포**: GitHub Actions를 통해 매일 오전 5시(KST) 텔레그램으로 자동 발송.
-- **단어 목록 관리**: GitHub Issue에 `update-words` 라벨을 달아 단어를 입력하면 학습 목록(`learned_words.txt`) 자동 갱신.
+- **단어 목록 관리**: 언어별 학습 목록(`learned_data_es.json`, `learned_data_ja.json`, `learned_data_zh.json`) 자동 갱신.
 
 ## 🛠️ 기술 스택
 - **언어**: Python 3.12

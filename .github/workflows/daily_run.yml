@@ -30,22 +30,33 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
+    - name: Configure Google service account
+      env:
+        GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+      run: |
+        if [ -z "$GOOGLE_SERVICE_ACCOUNT_JSON" ]; then
+          echo "GOOGLE_SERVICE_ACCOUNT_JSON secret is required for Imagen/Vertex AI" >&2
+          exit 1
+        fi
+        printf '%s' "$GOOGLE_SERVICE_ACCOUNT_JSON" > "$RUNNER_TEMP/service_key.json"
+        echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/service_key.json" >> "$GITHUB_ENV"
+
     - name: Run script
       env:
         GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         VOCAB_BOT_TOKEN: ${{ secrets.VOCAB_BOT_TOKEN }}
         VOCAB_CHAT_ID: ${{ secrets.VOCAB_CHAT_ID }}
-      run: python main.py
+      run: python spanish.py
 
     - name: Commit learned words update
       run: |
         git config --global user.name 'github-actions[bot]'
         git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-        git add learned_words.txt
+        git add learned_data_es.json
         
         # Check if there are any changes to commit
         if ! git diff --staged --quiet; then
-          git commit -m "chore: update learned words list [skip ci]"
+          git commit -m "chore: update Spanish learned data [skip ci]"
           git push
         else
           echo "No changes to commit."

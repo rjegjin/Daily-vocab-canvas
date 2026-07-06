@@ -7,6 +7,13 @@ import json
 from datetime import datetime
 from dotenv import load_dotenv
 from card_engine import generate_tts, send_audio_to_telegram, send_text_to_telegram, generate_tone_chart, send_to_telegram
+from vocab_feedback import (
+    load_supplement_seen,
+    load_supplement_weak,
+    merge_supplement_items,
+    save_latest_supplement,
+    send_supplement_feedback_buttons,
+)
 
 # -------------------------------------------------------------------
 # 환경 변수
@@ -56,6 +63,41 @@ HSK_WORDS = [
     ("坐", "zuò", "sit", "坐下", "Sit down"),
 ]
 
+MINIMAL_PAIR_SETS = [
+    {
+        "id": "tone_pair_ma",
+        "base_syllable": "ma",
+        "pairs": [
+            {"tone": 1, "char": "妈", "pinyin": "mā", "meaning": "어머니"},
+            {"tone": 2, "char": "麻", "pinyin": "má", "meaning": "삼, 마비"},
+            {"tone": 3, "char": "马", "pinyin": "mǎ", "meaning": "말"},
+            {"tone": 4, "char": "骂", "pinyin": "mà", "meaning": "욕하다"},
+        ],
+        "context_sentences": ["我妈妈很忙。", "请不要骂人。"],
+    },
+    {
+        "id": "tone_pair_shi",
+        "base_syllable": "shi",
+        "pairs": [
+            {"tone": 1, "char": "师", "pinyin": "shī", "meaning": "스승"},
+            {"tone": 2, "char": "十", "pinyin": "shí", "meaning": "열"},
+            {"tone": 3, "char": "史", "pinyin": "shǐ", "meaning": "역사"},
+            {"tone": 4, "char": "是", "pinyin": "shì", "meaning": "~이다"},
+        ],
+        "context_sentences": ["老师教历史。", "这是十本书。"],
+    },
+    {
+        "id": "tone_pair_mai",
+        "base_syllable": "mai",
+        "pairs": [
+            {"tone": 2, "char": "埋", "pinyin": "mái", "meaning": "묻다"},
+            {"tone": 3, "char": "买", "pinyin": "mǎi", "meaning": "사다"},
+            {"tone": 4, "char": "卖", "pinyin": "mài", "meaning": "팔다"},
+        ],
+        "context_sentences": ["我想买水果。", "他卖咖啡。"],
+    },
+]
+
 # (성조 이미지로 충분 - 텍스트 아트 제거)
 
 # -------------------------------------------------------------------
@@ -74,6 +116,18 @@ def get_tone_number(pinyin: str) -> int:
             return tone_map[char]
     return 1
 
+def choose_minimal_pair():
+    weak_ids = load_supplement_weak("zh_tones")
+    if weak_ids:
+        for item in MINIMAL_PAIR_SETS:
+            if item["id"] in weak_ids:
+                return item
+    seen = set(load_supplement_seen("zh_tones"))
+    for item in MINIMAL_PAIR_SETS:
+        if item["id"] not in seen:
+            return item
+    return MINIMAL_PAIR_SETS[datetime.now().toordinal() % len(MINIMAL_PAIR_SETS)]
+
 if __name__ == "__main__":
     print(f"=== 🇨🇳 Chinese Tone Visualization ({datetime.now().strftime('%Y-%m-%d %H:%M:%S')}) ===")
 
@@ -81,6 +135,7 @@ if __name__ == "__main__":
     day_of_week = datetime.now().weekday()  # 0=월, 6=일
     base_idx = (day_of_week * 5) % len(HSK_WORDS)
     selected_words = HSK_WORDS[base_idx:base_idx+5] if base_idx + 5 <= len(HSK_WORDS) else HSK_WORDS[base_idx:] + HSK_WORDS[:5-(len(HSK_WORDS)-base_idx)]
+    minimal_pair = choose_minimal_pair()
 
     # 텍스트 생성 (간단히: 단어, 병음, 뜻, 예문만)
     text_content = f"""🎵 *HSK 1~2级 成调学习* ({datetime.now().strftime('%A')})
@@ -94,10 +149,29 @@ if __name__ == "__main__":
 "{example}" ({example_en})
 """
 
+    text_content += f"""
+━━━━━━━━━━━━━━━━━━
+🎯 *최소대립쌍* `{minimal_pair['base_syllable']}`
+"""
+    for pair in minimal_pair["pairs"]:
+        text_content += f"{pair['char']} `{pair['pinyin']}` — {pair['meaning']}\n"
+    text_content += "\n맥락 예문:\n"
+    for sentence in minimal_pair["context_sentences"]:
+        text_content += f"- {sentence}\n"
+
     print(text_content)
 
     # 텔레그램으로 텍스트 전송
     send_text_to_telegram(text_content, TOKEN, CHAT_ID)
+    tone_item = {
+        "id": minimal_pair["id"],
+        "title": f"{minimal_pair['base_syllable']} 최소대립쌍",
+        "base_syllable": minimal_pair["base_syllable"],
+        "category": "minimal_pair",
+    }
+    merge_supplement_items("zh_tones", [tone_item])
+    save_latest_supplement("zh_tones", [tone_item])
+    send_supplement_feedback_buttons("zh_tones")
 
     # 성조 곡선 이미지 생성 및 전송
     tone_chart_path = os.path.join(PROJECT_DIR, "tone_chart.png")
@@ -125,5 +199,18 @@ if __name__ == "__main__":
                     os.remove(audio_path)
         except Exception as e:
             print(f"⚠️ {char} 음성 생성 실패: {e}")
+
+    try:
+        pair_script = "。 ".join(
+            [f"{pair['char']}，{pair['pinyin']}" for pair in minimal_pair["pairs"]]
+            + minimal_pair["context_sentences"]
+        )
+        audio_path = os.path.join(PROJECT_DIR, f"tone_pair_{minimal_pair['base_syllable']}.mp3")
+        if generate_tts(pair_script, 'cmn-CN', audio_path):
+            send_audio_to_telegram(audio_path, TOKEN, CHAT_ID, caption=f"🎧 최소대립쌍: {minimal_pair['base_syllable']}")
+            if os.path.exists(audio_path):
+                os.remove(audio_path)
+    except Exception as e:
+        print(f"⚠️ 최소대립쌍 음성 생성 실패: {e}")
 
     print("✅ 성조 시각화 발송 완료")

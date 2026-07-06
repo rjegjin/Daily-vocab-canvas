@@ -20,7 +20,8 @@ PROJECT_DIR = Path(__file__).parent
 COST_LOG    = PROJECT_DIR / 'cost_log.json'
 BUDGET_FILE = PROJECT_DIR / 'budget.json'
 
-LANG_LABEL = {'es': '🇪🇸 ES', 'ja': '🇯🇵 JA', 'zh': '🇨🇳 ZH'}
+LANG_LABEL = {'es': '🇪🇸 ES', 'ja': '🇯🇵 JA', 'zh': '🇨🇳 ZH', 'en': '🇬🇧 EN'}
+AI_COST_LABEL = 'Provider-specific text/image generation from cost_log.json'
 # TTS 단가: Standard $4/1M chars, 1M/월 무료
 TTS_FREE_CHARS  = 1_000_000
 TTS_PRICE_PER_M = 4.0
@@ -33,8 +34,8 @@ def _load_log() -> dict:
         return json.load(f)
 
 def _load_budget() -> dict:
-    defaults = {'monthly_limit_usd': 50.0, 'tts_enabled': True,
-                'lang_enabled': {'es': True, 'ja': True, 'zh': True}}
+    defaults = {'monthly_limit_usd': 10.0, 'tts_enabled': True,
+                'lang_enabled': {'es': True, 'ja': True, 'zh': True, 'en': True}}
     if not BUDGET_FILE.exists():
         return defaults
     with open(BUDGET_FILE, 'r') as f:
@@ -59,7 +60,7 @@ def _month_stats(prefix: str, log: dict) -> dict:
     """주어진 YYYY-MM 접두사에 해당하는 통계 반환"""
     gemini_total = 0.0
     tts_chars    = 0
-    per_lang     = {'es': 0.0, 'ja': 0.0, 'zh': 0.0}
+    per_lang     = {lang: 0.0 for lang in LANG_LABEL}
     days_with_data = 0
 
     for day_key, day_data in log.items():
@@ -117,7 +118,8 @@ def cmd_dashboard():
         print(f"  ✅")
 
     # Gemini 상세
-    print(f"\n🤖 Gemini 이미지 생성: ${stats['gemini']:.4f}")
+    print(f"\n🤖 AI 텍스트/이미지 생성: ${stats['gemini']:.4f}")
+    print(f"   기준: {AI_COST_LABEL}")
     for lang, cost in stats['per_lang'].items():
         enabled = budget['lang_enabled'].get(lang, True)
         status = '✅' if enabled else '🔴 비활성'
@@ -140,8 +142,8 @@ def cmd_dashboard():
     print(f"  python cost.py --budget <금액>     예산 변경")
     print(f"  python cost.py --disable all        전체 언어 비활성화")
     print(f"  python cost.py --enable  all        전체 언어 활성화")
-    print(f"  python cost.py --disable es|ja|zh  언어 개별 비활성화")
-    print(f"  python cost.py --enable  es|ja|zh  언어 개별 활성화")
+    print(f"  python cost.py --disable es|ja|zh|en  언어 개별 비활성화")
+    print(f"  python cost.py --enable  es|ja|zh|en  언어 개별 활성화")
     print(f"  python cost.py --disable tts        TTS 끄기")
     print(f"  python cost.py --history            일별 내역")
     print(f"{'='*46}\n")
@@ -198,17 +200,17 @@ def main():
         try:
             target = args[idx + 1].lower()
         except IndexError:
-            print("❌ 사용법: python cost.py --disable es|ja|zh|tts")
+            print("❌ 사용법: python cost.py --disable es|ja|zh|en|tts")
             return
         cfg = _load_budget()
         if target == 'all':
-            for lang in ('es', 'ja', 'zh'):
+            for lang in LANG_LABEL:
                 cfg['lang_enabled'][lang] = False
-            print("🔴 전체 언어 비활성화 (ES / JA / ZH)")
+            print("🔴 전체 언어 비활성화 (ES / JA / ZH / EN)")
         elif target == 'tts':
             cfg['tts_enabled'] = False
             print("🔴 TTS 비활성화")
-        elif target in ('es', 'ja', 'zh'):
+        elif target in LANG_LABEL:
             cfg['lang_enabled'][target] = False
             print(f"🔴 {LANG_LABEL[target]} 비활성화")
         else:
@@ -222,17 +224,17 @@ def main():
         try:
             target = args[idx + 1].lower()
         except IndexError:
-            print("❌ 사용법: python cost.py --enable es|ja|zh|tts")
+            print("❌ 사용법: python cost.py --enable es|ja|zh|en|tts")
             return
         cfg = _load_budget()
         if target == 'all':
-            for lang in ('es', 'ja', 'zh'):
+            for lang in LANG_LABEL:
                 cfg['lang_enabled'][lang] = True
-            print("✅ 전체 언어 활성화 (ES / JA / ZH)")
+            print("✅ 전체 언어 활성화 (ES / JA / ZH / EN)")
         elif target == 'tts':
             cfg['tts_enabled'] = True
             print("✅ TTS 활성화")
-        elif target in ('es', 'ja', 'zh'):
+        elif target in LANG_LABEL:
             cfg['lang_enabled'][target] = True
             print(f"✅ {LANG_LABEL[target]} 활성화")
         else:
