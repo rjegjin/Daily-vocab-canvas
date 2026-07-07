@@ -27,33 +27,40 @@
 
 ## Skill 사용
 
-- `$context-load`: 새 세션 시작 또는 맥락 파악 필요 시
-- `$dead-end-log`: 뭔가 실패했을 때 즉시 기록
-- `$grill-me`: 설계/계획 검토 시
-- `$tdd`: 기능 구현 시
-- `$zoom-out`: 방향이 흔들릴 때
+- `/ponytail`: 가장 간단한 솔루션 추구 (과도한 엔지니어링 방지)
+- `/code-review`: 코드 리뷰
+- `/simplify`: 코드 간소화 및 중복 제거
+- `/verify`: 구현 후 동작 검증
+- `/run`: 앱 실행 및 동작 확인
 
-## mh_bot 동기화
+## 운영 서버 배포 (mhbot@100.103.20.9)
 
-- 운영 서버는 `mh_bot@100.103.20.9`이다.
-- 운영 프로젝트 경로는 `/home/mh_bot/projects/Daily_Vocab_Card_Bot`이다.
-- 로컬 변경은 Git hook, cron, GitHub Actions, systemd로 자동 동기화되지 않는다.
-- AI 또는 로컬 작업으로 운영에 반영해야 하는 파일이 바뀌면, 작업 종료 전 변경 파일을 명시적으로 `rsync`로 동기화한다.
-- 전체 working tree를 무조건 동기화하지 않는다. 로그, 캐시, 생성 이미지, lock 파일, learned data가 섞여 있으므로 검토한 source/docs/config 파일만 보낸다.
-- 기본 동기화 예시:
+- 운영 서버: `mhbot@100.103.20.9`
+- 운영 프로젝트 경로: `/home/mh_bot/projects/Daily_Vocab_Card_Bot`
+- 로컬 변경은 Git hook, cron, GitHub Actions, systemd로 자동 동기화되지 않음.
+- 코드 변경 시 git push 후, 원격 서버에서 git pull 하거나 명시적 rsync 동기화
+
+**부트스트랩 변경** (2026-07-06):
+- 모든 봇이 `bot_common` (mh-common의 shared 헬퍼) 사용
+- `load_secrets()`: `~/.secrets/.env` 로드
+- `require_env()`: 필수 환경 변수 검증
+- 환경 변수 누락 시 启动 중단으로 사고 방지
+
+**동기화 시 주의**:
+- 전체 working tree 무조건 동기화 금지 (로그, 캐시, 이미지, lock, learned data 혼합)
+- 검토된 source/docs/config 파일만 선택 동기화
 
 ```bash
-rsync -av path/to/file.py path/to/doc.md mh_bot@100.103.20.9:/home/mh_bot/projects/Daily_Vocab_Card_Bot/
+rsync -av manager_bot.py spanish.py japanese.py chinese.py mhbot@100.103.20.9:/home/mh_bot/projects/Daily_Vocab_Card_Bot/
+rsync -av GEMINI.md README.md PROJECT_STATUS.md mhbot@100.103.20.9:/home/mh_bot/projects/Daily_Vocab_Card_Bot/
 ```
 
-- 현재 운영 서비스는 `vocab-manager-bot.service`이고 `manager_bot.py`를 실행한다.
-- runtime Python 파일이나 service entrypoint를 운영에 반영한 경우 필요한 서비스만 재시작한다.
+**서비스 재시작**:
+- 현재 운영 서비스: `vocab-manager-bot.service` (manager_bot.py 실행)
 
 ```bash
-ssh mh_bot@100.103.20.9 'systemctl --user restart vocab-manager-bot.service'
+ssh mhbot@100.103.20.9 'systemctl --user restart vocab-manager-bot.service'
 ```
-
-- 언어별 bot service를 추가한 뒤에는 전체 manager가 아니라 영향을 받은 언어별 service만 재시작한다.
 
 ## 검증 출력 최소화
 

@@ -7,21 +7,27 @@
 
 ## 🏛️ 시스템 아키텍처
 
-### 1. 지능형 단어 생성 (Gemini 3.0 Flash)
+### 1. 지능형 단어 생성 (기본: OpenAI, 대체: Gemini)
 - `learned_data_*.json`을 참조하여 중복되지 않는 단어 9개 선정.
 - 품사, 감정, 자연, 사물 등 다양한 카테고리를 골고루 섞어 균형 잡힌 학습 제공.
+- 환경 변수 `VOCAB_TEXT_PROVIDER`로 OpenAI(기본) 또는 Gemini 선택 가능.
+- 비용 최적화: OpenAI 저가 모델로 전환하여 비용 절감.
 
-### 2. 고해상도 이미지 그리드 (Imagen 4)
+### 2. 고해상도 이미지 그리드 (기본: OpenAI DALL-E, 대체: Imagen)
 - 3x3 격자 구조의 일러스트 생성.
 - 상단 텍스트 영역 확보를 위해 미니멀하고 중앙 집중적인 구도 강조.
+- 환경 변수 `VOCAB_IMAGE_PROVIDER`로 OpenAI(기본) 또는 Imagen 선택 가능.
+- 비용 절감: Imagen 대비 OpenAI DALL-E 사용 시 비용 약 35% 절감.
 
 ### 3. 정밀 텍스트 레이어링 (Pillow)
 - AI 이미지 위에 순백색 텍스트 상자를 덧씌워 가독성 100% 확보.
 - 본문, IPA 발음, 뜻, 예문을 체계적으로 배치하여 가시성 극대화.
 
-### 4. GitHub Actions 기반 워크플로우
-- **데일리 배치**: 매일 정해진 시간에 자동 실행 및 텔레그램 발송.
-- **수동 업데이트**: GitHub Issue와 `issue_to_words.py`를 연동하여 학습 단어 목록 관리 및 커밋 자동화.
+### 4. 스케줄 기반 워크플로우 (Manager Bot 상주 + GitHub Actions)
+- **상시 스케줄러**: `manager_bot.py` 상주 실행으로 APScheduler 기반 정시 자동 실행.
+- **대체 GitHub Actions**: 기존 daily workflow도 지원 (ES/JA/ZH 각 언어별).
+- **수동 업데이트**: GitHub Issue와 `issue_to_words.py` 연동 (선택사항).
+- **비용 관리**: `budget.json`으로 월 예산 제한, 언어별 활성/비활성 제어.
 
 ## 🚀 향후 발전 방향 (Next Steps)
 - [ ] **다국어 지원**: 현재 스페인어 중심에서 프랑스어, 독일어 등으로 확장.
