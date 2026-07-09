@@ -134,7 +134,11 @@ def handle_voice_message(audio_path: str, duration_sec: float):
     """
     Handle incoming voice message.
     Transcribe -> Generate response -> TTS
-    Returns: (success: bool, response_text: str, audio_path_or_none: str, message: str)
+    Returns: (success: bool, user_text: str, response_audio_path_or_none: str, bot_response: str)
+      - success: True if processing succeeded and session continues, False if max_turns reached or error
+      - user_text: transcribed user utterance
+      - response_audio_path_or_none: path to TTS audio file for bot response, or None if TTS failed
+      - bot_response: bot's next utterance text (or error message if success=False)
     """
     state = get_state()
     session = state.get("speaking_session")
@@ -151,7 +155,7 @@ def handle_voice_message(audio_path: str, duration_sec: float):
 
         with open(audio_path, "rb") as f:
             transcript = client.audio.transcriptions.create(
-                model="whisper-1",
+                model="gpt-4o-mini-transcribe",
                 file=f,
             )
         user_text = transcript.text or ""
@@ -162,7 +166,7 @@ def handle_voice_message(audio_path: str, duration_sec: float):
             "en",
             "openai_stt",
             cost,
-            model="whisper-1",
+            model="gpt-4o-mini-transcribe",
             audio_sec=duration_sec,
         )
     except Exception as e:

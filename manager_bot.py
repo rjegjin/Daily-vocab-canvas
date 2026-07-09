@@ -484,6 +484,7 @@ async def handle_voice(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not voice:
         return
     duration_sec = voice.duration or 0
+    file_path = None
     try:
         file = await voice.get_file()
         file_path = os.path.join(PROJECT_DIR, f"voice_{int(datetime.now().timestamp())}.ogg")
@@ -503,11 +504,11 @@ async def handle_voice(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             await update.message.reply_text(message)
 
-        if os.path.exists(file_path):
+        if file_path and os.path.exists(file_path):
             os.remove(file_path)
     except Exception as e:
         await update.message.reply_text(f"❌ 음성 처리 실패: {e}")
-        if os.path.exists(file_path):
+        if file_path and os.path.exists(file_path):
             os.remove(file_path)
 
 async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
