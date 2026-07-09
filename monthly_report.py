@@ -78,11 +78,11 @@ def _monthly_cost(year: int, month: int) -> float:
 
 def _speaking_metrics(year: int, month: int) -> dict:
     """
-    Calculate speaking session metrics for a given month.
+    Calculate speaking session metrics for a given month from SPEAKING_SESSIONS_FILE.
     Returns: dict with keys:
       - sessions_count: int (total sessions this month)
-      - target_hit_rate: float (0-100, based on analysis data)
-      - avg_turn_length: float (average words per turn)
+      - target_hit_rate: float (0-100, based on target_hit field)
+      - avg_turn_length: float (average of avg_turn_words)
       - speaking_error_resolved: float (0-100, weak=False ratio for speaking_error items)
     """
     prefix = f"{year:04d}-{month:02d}"
@@ -94,51 +94,41 @@ def _speaking_metrics(year: int, month: int) -> dict:
         "speaking_error_resolved": 0.0,
     }
 
-    # Count sessions and calculate target hit rate
-    submissions_path = PROJECT_DIR / "speaking_submissions.json"
-    if submissions_path.exists():
+    # Count sessions and calculate metrics from SPEAKING_SESSIONS_FILE
+    sessions_path = PROJECT_DIR / "speaking_sessions.json"
+    if sessions_path.exists():
         try:
-            with open(submissions_path, "r", encoding="utf-8") as f:
-                submissions = json.load(f)
-            if not isinstance(submissions, list):
-                submissions = []
+            with open(sessions_path, "r", encoding="utf-8") as f:
+                sessions = json.load(f)
+            if not isinstance(sessions, list):
+                sessions = []
 
-            this_month_submissions = [
+            this_month_sessions = [
                 s
-                for s in submissions
-                if isinstance(s, dict)
-                and s.get("session_date", "").startswith(prefix)
+                for s in sessions
+                if isinstance(s, dict) and s.get("date", "").startswith(prefix)
             ]
-            result["sessions_count"] = len(this_month_submissions)
+            result["sessions_count"] = len(this_month_sessions)
 
-            # Calculate target hit rate and avg turn length from analysis
-            hit_counts = []
-            total_words = []
-            for submission in this_month_submissions:
-                analysis = submission.get("analysis")
-                if analysis and isinstance(analysis, dict):
-                    # Target hit rate
-                    target_hit = analysis.get("target_hit", {})
-                    if isinstance(target_hit, dict):
-                        used = len(target_hit.get("used_well", []))
-                        missed = len(target_hit.get("missed", []))
-                        total_targets = used + missed
-                        if total_targets > 0:
-                            hit_counts.append(used / total_targets)
+            # Calculate target hit rate and avg turn length
+            target_hits = []
+            avg_words = []
+            for session in this_month_sessions:
+                # Target hit: only for roleplay sessions with analysis
+                if session.get("target_hit") is True:
+                    target_hits.append(1.0)
+                elif session.get("target_hit") is False:
+                    target_hits.append(0.0)
 
-                    # Average turn length from metrics
-                    metrics = analysis.get("metrics", {})
-                    if isinstance(metrics, dict):
-                        avg_words = metrics.get("avg_words_per_turn", 0)
-                        if avg_words > 0:
-                            total_words.append(avg_words)
+                # Average turn length
+                avg_turn = session.get("avg_turn_words", 0.0)
+                if avg_turn > 0:
+                    avg_words.append(avg_turn)
 
-            if hit_counts:
-                result["target_hit_rate"] = round(
-                    sum(hit_counts) / len(hit_counts) * 100, 1
-                )
-            if total_words:
-                result["avg_turn_length"] = round(sum(total_words) / len(total_words), 1)
+            if target_hits:
+                result["target_hit_rate"] = round(sum(target_hits) / len(target_hits) * 100, 1)
+            if avg_words:
+                result["avg_turn_length"] = round(sum(avg_words) / len(avg_words), 1)
 
         except Exception as e:
             print(f"⚠️ 말하기 메트릭 계산 실패: {e}")

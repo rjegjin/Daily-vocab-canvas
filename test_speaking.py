@@ -820,15 +820,15 @@ def test_speaking_stats_empty():
 
 
 def test_speaking_stats_basic():
-    """Test speaking_stats with sample sessions."""
+    """Test speaking_stats with sample sessions containing metric fields."""
     from english_speaking import speaking_stats
-    from english_core import SPEAKING_SESSIONS_FILE, SPEAKING_SUBMISSIONS_FILE, write_json
-    from datetime import date
+    from english_core import SPEAKING_SESSIONS_FILE, write_json
+    from english_core import TODAY
 
-    today = str(date.today())
+    today = TODAY()
     this_month = today[:7]
 
-    # Create sample sessions
+    # Create sample sessions with metric fields
     sessions = [
         {
             "date": this_month + "-01",
@@ -837,6 +837,9 @@ def test_speaking_stats_basic():
             "turn_count": 4,
             "target_expressions": [],
             "feedback_sent": True,
+            "audio_sec_total": 3.5,  # 2.0 + 1.5
+            "avg_turn_words": 2.0,
+            "target_hit": True,
         },
         {
             "date": this_month + "-05",
@@ -845,6 +848,8 @@ def test_speaking_stats_basic():
             "turn_count": 2,
             "target_expressions": [],
             "feedback_sent": False,
+            "audio_sec_total": 3.0,
+            "avg_turn_words": 2.0,
         },
         {
             "date": today,
@@ -853,59 +858,19 @@ def test_speaking_stats_basic():
             "turn_count": 3,
             "target_expressions": [],
             "feedback_sent": True,
-        },
-    ]
-
-    # Create sample submissions with audio
-    submissions = [
-        {
-            "session_date": this_month + "-01",
-            "submitted_at": f"{this_month}-01T10:00:00",
-            "scenario_ko": "첫 번째 상황",
-            "target_expressions": [],
-            "turns": [
-                {"role": "assistant", "text": "Hello"},
-                {"role": "user", "text": "Hi", "audio_sec": 2.0},
-                {"role": "assistant", "text": "How are you?"},
-                {"role": "user", "text": "Good", "audio_sec": 1.5},
-            ],
-        },
-        {
-            "session_date": this_month + "-05",
-            "submitted_at": f"{this_month}-05T11:00:00",
-            "scenario_ko": "두 번째 상황",
-            "target_expressions": [],
-            "mode": "shadowing",
-            "turns": [
-                {
-                    "sentence_index": 0,
-                    "model_text": "Thank you",
-                    "user_text": "Thank you",
-                    "audio_sec": 3.0,
-                    "diff_report": {"missing_words": [], "misread_words": []},
-                }
-            ],
-        },
-        {
-            "session_date": today,
-            "submitted_at": f"{today}T12:00:00",
-            "scenario_ko": "최근 상황",
-            "target_expressions": [],
-            "turns": [
-                {"role": "assistant", "text": "Hi"},
-                {"role": "user", "text": "Hello", "audio_sec": 2.5},
-            ],
+            "audio_sec_total": 2.5,
+            "avg_turn_words": 1.0,
+            "target_hit": False,
         },
     ]
 
     write_json(SPEAKING_SESSIONS_FILE, sessions)
-    write_json(SPEAKING_SUBMISSIONS_FILE, submissions)
 
     stats = speaking_stats()
 
     assert stats["total_sessions"] == 3
     assert stats["this_month_sessions"] == 3
-    assert stats["total_audio_sec"] == 9.0  # 2.0 + 1.5 + 3.0 + 2.5
+    assert stats["total_audio_sec"] == 9.0  # 3.5 + 3.0 + 2.5
     assert stats["recent_scenario"] == "최근 상황"
     assert stats["mode_breakdown"]["roleplay"] == 2
     assert stats["mode_breakdown"]["shadowing"] == 1
@@ -936,9 +901,9 @@ def test_speaking_stats_missing_file():
 
 
 def test_speaking_stats_partial_month():
-    """Test speaking_stats filters by month correctly."""
+    """Test speaking_stats filters by month correctly using TODAY() helper."""
     from english_speaking import speaking_stats
-    from english_core import SPEAKING_SESSIONS_FILE, SPEAKING_SUBMISSIONS_FILE, write_json
+    from english_core import SPEAKING_SESSIONS_FILE, write_json
 
     sessions = [
         {
@@ -948,6 +913,8 @@ def test_speaking_stats_partial_month():
             "turn_count": 2,
             "target_expressions": [],
             "feedback_sent": False,
+            "audio_sec_total": 1.0,
+            "avg_turn_words": 1.5,
         },
         {
             "date": "2026-07-09",
@@ -956,36 +923,15 @@ def test_speaking_stats_partial_month():
             "turn_count": 3,
             "target_expressions": [],
             "feedback_sent": True,
-        },
-    ]
-
-    submissions = [
-        {
-            "session_date": "2026-06-15",
-            "submitted_at": "2026-06-15T10:00:00",
-            "scenario_ko": "지난달 상황",
-            "target_expressions": [],
-            "turns": [
-                {"role": "assistant", "text": "Hi"},
-                {"role": "user", "text": "Hello", "audio_sec": 1.0},
-            ],
-        },
-        {
-            "session_date": "2026-07-09",
-            "submitted_at": "2026-07-09T10:00:00",
-            "scenario_ko": "이달 상황",
-            "target_expressions": [],
-            "turns": [
-                {"role": "assistant", "text": "Hello"},
-                {"role": "user", "text": "Hi", "audio_sec": 2.0},
-            ],
+            "audio_sec_total": 2.0,
+            "avg_turn_words": 2.0,
+            "target_hit": True,
         },
     ]
 
     write_json(SPEAKING_SESSIONS_FILE, sessions)
-    write_json(SPEAKING_SUBMISSIONS_FILE, submissions)
 
-    # Mock today to be in July 2026
+    # Mock TODAY to be in July 2026
     with patch("english_speaking.TODAY") as mock_today:
         mock_today.return_value = "2026-07-09"
 
@@ -993,7 +939,7 @@ def test_speaking_stats_partial_month():
 
         assert stats["total_sessions"] == 2
         assert stats["this_month_sessions"] == 1  # Only July
-        assert stats["total_audio_sec"] == 3.0  # Both months' audio
+        assert stats["total_audio_sec"] == 3.0  # 1.0 + 2.0
 
 
 if __name__ == "__main__":

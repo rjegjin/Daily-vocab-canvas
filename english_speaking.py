@@ -475,13 +475,28 @@ def _handle_shadowing_voice(audio_path: str, duration_sec: float):
 
         # Record to history
         try:
+            # Calculate metrics from turns
+            session_turns = session.get("turns", [])
+            audio_sec_total = sum(t.get("audio_sec", 0.0) for t in session_turns if isinstance(t, dict))
+            avg_turn_words = 0.0
+            if session_turns:
+                total_words = sum(
+                    len(t.get("user_text", "").split()) for t in session_turns
+                    if isinstance(t, dict) and "user_text" in t
+                )
+                word_count = sum(1 for t in session_turns if isinstance(t, dict) and "user_text" in t)
+                if word_count > 0:
+                    avg_turn_words = round(total_words / word_count, 1)
+
             session_record = {
                 "date": session.get("date", TODAY()),
                 "mode": "shadowing",
                 "scenario_ko": session.get("scenario_ko", ""),
-                "turn_count": len(session["turns"]),
+                "turn_count": len(session_turns),
                 "target_expressions": session.get("target_expressions", []),
                 "feedback_sent": False,
+                "audio_sec_total": round(audio_sec_total, 1),
+                "avg_turn_words": avg_turn_words,
             }
             add_history(SPEAKING_SESSIONS_FILE, session_record, limit=250)
 
@@ -640,19 +655,17 @@ def format_speaking_feedback(analysis: dict):
 
 def speaking_stats() -> dict:
     """
-    Query speaking sessions and compute statistics.
+    Query speaking sessions and compute statistics from SPEAKING_SESSIONS_FILE only.
 
     Returns: dict with keys:
       - total_sessions: int
       - this_month_sessions: int
-      - total_audio_sec: float (sum of user audio_sec from submissions)
+      - total_audio_sec: float (sum of audio_sec_total field)
       - recent_scenario: str (scenario_ko of latest session or "기록 없음")
       - mode_breakdown: dict {"roleplay": count, "shadowing": count}
 
     Returns empty/zero stats if files don't exist or are empty.
     """
-    from datetime import date
-
     result = {
         "total_sessions": 0,
         "this_month_sessions": 0,
@@ -672,8 +685,8 @@ def speaking_stats() -> dict:
 
         result["total_sessions"] = len(sessions)
 
-        # Count this month
-        this_month = str(date.today())[:7]  # "YYYY-MM"
+        # Count this month (use TODAY() for consistency with module)
+        this_month = TODAY()[:7]  # "YYYY-MM"
         result["this_month_sessions"] = sum(
             1 for s in sessions
             if isinstance(s, dict) and s.get("date", "").startswith(this_month)
@@ -685,34 +698,16 @@ def speaking_stats() -> dict:
                 result["recent_scenario"] = session["scenario_ko"]
                 break
 
-        # Mode breakdown
+        # Mode breakdown and total audio
         for session in sessions:
             if isinstance(session, dict):
                 mode = session.get("mode", "roleplay")
                 result["mode_breakdown"][mode] = result["mode_breakdown"].get(mode, 0) + 1
+                # ponytail: audio_sec_total field added to session_record in finalize_session
+                result["total_audio_sec"] += session.get("audio_sec_total", 0.0)
 
     except Exception as e:
         print(f"⚠️ speaking_stats 읽기 실패: {e}")
-
-    # Load submissions to calculate total audio
-    if not os.path.exists(SPEAKING_SUBMISSIONS_FILE):
-        return result
-
-    try:
-        submissions = read_json(SPEAKING_SUBMISSIONS_FILE, [])
-        if not submissions:
-            return result
-
-        for submission in submissions:
-            if isinstance(submission, dict):
-                turns = submission.get("turns", [])
-                for turn in turns:
-                    if isinstance(turn, dict) and "audio_sec" in turn:
-                        # ponytail: count any turn with audio_sec (user in roleplay, all in shadowing)
-                        result["total_audio_sec"] += turn.get("audio_sec", 0.0)
-
-    except Exception as e:
-        print(f"⚠️ speaking_stats 오디오 계산 실패: {e}")
 
     result["total_audio_sec"] = round(result["total_audio_sec"], 1)
     return result
@@ -796,6 +791,17 @@ def finalize_session():
 
     # Record to history files
     try:
+        # Calculate metrics from turns
+        audio_sec_total = sum(
+            t.get("audio_sec", 0.0) for t in turns
+            if isinstance(t, dict) and t.get("role") == "user"
+        )
+        user_turns = [t for t in turns if isinstance(t, dict) and t.get("role") == "user"]
+        avg_turn_words = 0.0
+        if user_turns:
+            total_words = sum(len(t.get("text", "").split()) for t in user_turns)
+            avg_turn_words = round(total_words / len(user_turns), 1)
+
         # Session metadata
         session_record = {
             "date": session_date,
@@ -804,7 +810,18 @@ def finalize_session():
             "turn_count": turn_count,
             "target_expressions": session.get("target_expressions", []),
             "feedback_sent": bool(analysis),
+            "audio_sec_total": round(audio_sec_total, 1),
+            "avg_turn_words": avg_turn_words,
         }
+
+        # For roleplay with analysis, add target_hit
+        if analysis and session.get("mode", "roleplay") == "roleplay":
+            target_hit = analysis.get("target_hit", {})
+            if isinstance(target_hit, dict):
+                used = len(target_hit.get("used_well", []))
+                missed = len(target_hit.get("missed", []))
+                session_record["target_hit"] = used > 0 if (used + missed) > 0 else False
+
         add_history(SPEAKING_SESSIONS_FILE, session_record, limit=250)
 
         # Detailed submissions with analysis
