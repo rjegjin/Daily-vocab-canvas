@@ -22,10 +22,12 @@ from english_core import (
     mark_weak,
     merge_learned,
     read_json,
+    send_audio,
     send_message,
     write_json,
 )
 from english_dialogue import generate_dialogue
+from openai import OpenAI
 
 PROJECT_DIR = Path(__file__).resolve().parent
 VOICE_ASSISTANT = os.getenv("EN_SPEAKING_VOICE", "en-US-Neural2-D")
@@ -39,7 +41,6 @@ def _transcribe_audio(audio_path: str, duration_sec: float) -> tuple:
       - If failed: ("", error_message)
     """
     try:
-        from openai import OpenAI
         client = OpenAI()
 
         with open(audio_path, "rb") as f:
@@ -171,9 +172,14 @@ def start_speaking_session():
         item = latest_dialogue.get("item")
 
     if not item:
-        item = generate_dialogue()
-        state["latest_en_dialogue"] = {"date": today, "item": item}
-        write_json(ENGLISH_STATE_FILE, state)
+        try:
+            item = generate_dialogue()
+            if not item or not isinstance(item, dict):
+                return False, "❌ 회화 생성 실패: 대사를 생성할 수 없습니다."
+            state["latest_en_dialogue"] = {"date": today, "item": item}
+            write_json(ENGLISH_STATE_FILE, state)
+        except Exception as e:
+            return False, f"❌ 회화 생성 실패: {e}"
 
     # Extract scenario info
     scenario_ko = item.get("scenario_ko", "")
@@ -233,7 +239,6 @@ Keep it to 1-2 sentences.
             VOICE_ASSISTANT,
         )
         if audio_path and os.path.exists(audio_path):
-            from english_core import send_audio
             send_audio(audio_path, caption="🎤 봇 발화 — 답해주세요")
             os.remove(audio_path)
     except Exception as e:
@@ -310,10 +315,10 @@ def handle_voice_message(audio_path: str, duration_sec: float):
     - roleplay: Transcribe -> Generate response -> TTS
     - shadowing: Transcribe -> Diff against model sentence -> Move to next or end
 
-    Returns: (success: bool, user_text: str, response_audio_path_or_none: str, bot_response: str)
+    Returns: (success: bool, user_text: str, audio_path_response: str, bot_response: str)
       - success: True if processing succeeded and session continues, False if session ends or error
       - user_text: transcribed user utterance
-      - response_audio_path_or_none: path to TTS audio file (roleplay only), or None
+      - audio_path_response: path to TTS audio file (roleplay only), or None
       - bot_response: bot's next utterance text (or feedback/error message)
     """
     state = get_state()

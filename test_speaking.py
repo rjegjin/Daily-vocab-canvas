@@ -71,6 +71,52 @@ def test_start_speaking_session_already_active():
     assert "이미 진행 중인" in message or "already" in message.lower()
 
 
+def test_start_speaking_session_generate_dialogue_returns_none():
+    """Test start_speaking_session handles generate_dialogue returning None."""
+    from english_speaking import start_speaking_session
+    from english_core import ENGLISH_STATE_FILE, write_json
+
+    # Clear state
+    write_json(ENGLISH_STATE_FILE, {})
+
+    with patch("english_speaking.generate_dialogue") as mock_gen:
+        mock_gen.return_value = None
+
+        success, message = start_speaking_session()
+
+        assert success is False
+        assert "생성 실패" in message or "실패" in message
+        assert "대사" in message
+
+        # Verify session was NOT created
+        from english_core import get_state
+        state = get_state()
+        assert "speaking_session" not in state
+
+
+def test_start_speaking_session_generate_dialogue_raises():
+    """Test start_speaking_session handles generate_dialogue raising exception."""
+    from english_speaking import start_speaking_session
+    from english_core import ENGLISH_STATE_FILE, write_json
+
+    # Clear state
+    write_json(ENGLISH_STATE_FILE, {})
+
+    with patch("english_speaking.generate_dialogue") as mock_gen:
+        mock_gen.side_effect = RuntimeError("API 연결 오류")
+
+        success, message = start_speaking_session()
+
+        assert success is False
+        assert "생성 실패" in message or "실패" in message
+        assert "API 연결 오류" in message
+
+        # Verify session was NOT created
+        from english_core import get_state
+        state = get_state()
+        assert "speaking_session" not in state
+
+
 def test_handle_voice_message_success():
     """Test voice message handling with transcription and response."""
     from english_speaking import handle_voice_message

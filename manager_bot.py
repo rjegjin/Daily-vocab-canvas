@@ -17,6 +17,7 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKe
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes, MessageHandler, filters
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from bot_common import load_secrets, require_env, run_bot
+from english_speaking import start_speaking_session, start_shadowing_session, handle_voice_message, finalize_session
 
 # -------------------------------------------------------------------
 # 경로 및 환경 변수 설정
@@ -384,22 +385,18 @@ def _send_more_lang_dialogue(lang: str):
     return bool(send_more_dialogue())
 
 def _start_speaking_session():
-    from english_speaking import start_speaking_session
     success, message = start_speaking_session()
     return message
 
 def _start_shadowing_session():
-    from english_speaking import start_shadowing_session
     success, message = start_shadowing_session()
     return message
 
 def _handle_voice_message(audio_path: str, duration_sec: float):
-    from english_speaking import handle_voice_message
     success, user_text, audio_path_response, message = handle_voice_message(audio_path, duration_sec)
     return success, user_text, audio_path_response, message
 
 def _end_speaking_session():
-    from english_speaking import finalize_session
     turns_data, message = finalize_session()
     return message
 
