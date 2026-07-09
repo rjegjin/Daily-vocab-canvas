@@ -206,6 +206,19 @@ def _get_stats() -> str:
             stats_msg += f"  {label}: 읽기 실패 ({e})\n"
     stats_msg += "\n"
 
+    # 말하기 세션 통계
+    try:
+        from english_speaking import speaking_stats
+        speaking = speaking_stats()
+        stats_msg += "*🎤 말하기 세션*\n"
+        stats_msg += f"  총 {speaking['total_sessions']}회 · 이번 달 +{speaking['this_month_sessions']}회\n"
+        stats_msg += f"  누적 발화: {speaking['total_audio_sec']:.1f}분\n"
+        if speaking['recent_scenario'] != "기록 없음":
+            stats_msg += f"  최근: {speaking['recent_scenario'][:32]}\n"
+        stats_msg += "\n"
+    except Exception as e:
+        stats_msg += f"🎤 말하기: 읽기 실패 ({e})\n\n"
+
     # API 비용 확인
     stats_msg += "💰 *오늘의 API 비용*\n"
     cost_path = os.path.join(PROJECT_DIR, 'cost_log.json')

@@ -178,6 +178,20 @@ def stats_summary() -> str:
                 lines.append(f"최근: {', '.join(recent)}")
         except Exception as exc:
             lines.append(f"{label}: 읽기 실패 ({exc})")
+
+    # 말하기 세션 통계
+    try:
+        from english_speaking import speaking_stats
+        speaking = speaking_stats()
+        lines.append("")
+        lines.append("말하기 세션")
+        lines.append(f"  총 {speaking['total_sessions']}회 / 이번 달 +{speaking['this_month_sessions']}")
+        lines.append(f"  누적 발화: {speaking['total_audio_sec']:.1f}분")
+        if speaking['recent_scenario'] != "기록 없음":
+            lines.append(f"  최근: {speaking['recent_scenario'][:32]}")
+    except Exception as exc:
+        lines.append(f"말하기: 읽기 실패 ({exc})")
+
     return "\n".join(lines)
 
 

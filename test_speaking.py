@@ -802,5 +802,199 @@ def test_normalize_text():
     assert _normalize_text("HELLO, World!!!") == "hello world"
 
 
+def test_speaking_stats_empty():
+    """Test speaking_stats with no sessions."""
+    from english_speaking import speaking_stats
+    from english_core import SPEAKING_SESSIONS_FILE, SPEAKING_SUBMISSIONS_FILE, write_json
+
+    # Clear files
+    write_json(SPEAKING_SESSIONS_FILE, [])
+    write_json(SPEAKING_SUBMISSIONS_FILE, [])
+
+    stats = speaking_stats()
+
+    assert stats["total_sessions"] == 0
+    assert stats["this_month_sessions"] == 0
+    assert stats["total_audio_sec"] == 0.0
+    assert stats["recent_scenario"] == "기록 없음"
+
+
+def test_speaking_stats_basic():
+    """Test speaking_stats with sample sessions."""
+    from english_speaking import speaking_stats
+    from english_core import SPEAKING_SESSIONS_FILE, SPEAKING_SUBMISSIONS_FILE, write_json
+    from datetime import date
+
+    today = str(date.today())
+    this_month = today[:7]
+
+    # Create sample sessions
+    sessions = [
+        {
+            "date": this_month + "-01",
+            "mode": "roleplay",
+            "scenario_ko": "첫 번째 상황",
+            "turn_count": 4,
+            "target_expressions": [],
+            "feedback_sent": True,
+        },
+        {
+            "date": this_month + "-05",
+            "mode": "shadowing",
+            "scenario_ko": "두 번째 상황",
+            "turn_count": 2,
+            "target_expressions": [],
+            "feedback_sent": False,
+        },
+        {
+            "date": today,
+            "mode": "roleplay",
+            "scenario_ko": "최근 상황",
+            "turn_count": 3,
+            "target_expressions": [],
+            "feedback_sent": True,
+        },
+    ]
+
+    # Create sample submissions with audio
+    submissions = [
+        {
+            "session_date": this_month + "-01",
+            "submitted_at": f"{this_month}-01T10:00:00",
+            "scenario_ko": "첫 번째 상황",
+            "target_expressions": [],
+            "turns": [
+                {"role": "assistant", "text": "Hello"},
+                {"role": "user", "text": "Hi", "audio_sec": 2.0},
+                {"role": "assistant", "text": "How are you?"},
+                {"role": "user", "text": "Good", "audio_sec": 1.5},
+            ],
+        },
+        {
+            "session_date": this_month + "-05",
+            "submitted_at": f"{this_month}-05T11:00:00",
+            "scenario_ko": "두 번째 상황",
+            "target_expressions": [],
+            "mode": "shadowing",
+            "turns": [
+                {
+                    "sentence_index": 0,
+                    "model_text": "Thank you",
+                    "user_text": "Thank you",
+                    "audio_sec": 3.0,
+                    "diff_report": {"missing_words": [], "misread_words": []},
+                }
+            ],
+        },
+        {
+            "session_date": today,
+            "submitted_at": f"{today}T12:00:00",
+            "scenario_ko": "최근 상황",
+            "target_expressions": [],
+            "turns": [
+                {"role": "assistant", "text": "Hi"},
+                {"role": "user", "text": "Hello", "audio_sec": 2.5},
+            ],
+        },
+    ]
+
+    write_json(SPEAKING_SESSIONS_FILE, sessions)
+    write_json(SPEAKING_SUBMISSIONS_FILE, submissions)
+
+    stats = speaking_stats()
+
+    assert stats["total_sessions"] == 3
+    assert stats["this_month_sessions"] == 3
+    assert stats["total_audio_sec"] == 9.0  # 2.0 + 1.5 + 3.0 + 2.5
+    assert stats["recent_scenario"] == "최근 상황"
+    assert stats["mode_breakdown"]["roleplay"] == 2
+    assert stats["mode_breakdown"]["shadowing"] == 1
+
+
+def test_speaking_stats_missing_file():
+    """Test speaking_stats when files don't exist."""
+    from english_speaking import speaking_stats
+    from english_core import SPEAKING_SESSIONS_FILE, SPEAKING_SUBMISSIONS_FILE
+    import os
+
+    # Ensure files don't exist
+    try:
+        os.remove(SPEAKING_SESSIONS_FILE)
+    except FileNotFoundError:
+        pass
+    try:
+        os.remove(SPEAKING_SUBMISSIONS_FILE)
+    except FileNotFoundError:
+        pass
+
+    stats = speaking_stats()
+
+    assert stats["total_sessions"] == 0
+    assert stats["this_month_sessions"] == 0
+    assert stats["total_audio_sec"] == 0.0
+    assert stats["recent_scenario"] == "기록 없음"
+
+
+def test_speaking_stats_partial_month():
+    """Test speaking_stats filters by month correctly."""
+    from english_speaking import speaking_stats
+    from english_core import SPEAKING_SESSIONS_FILE, SPEAKING_SUBMISSIONS_FILE, write_json
+
+    sessions = [
+        {
+            "date": "2026-06-15",
+            "mode": "roleplay",
+            "scenario_ko": "지난달 상황",
+            "turn_count": 2,
+            "target_expressions": [],
+            "feedback_sent": False,
+        },
+        {
+            "date": "2026-07-09",
+            "mode": "roleplay",
+            "scenario_ko": "이달 상황",
+            "turn_count": 3,
+            "target_expressions": [],
+            "feedback_sent": True,
+        },
+    ]
+
+    submissions = [
+        {
+            "session_date": "2026-06-15",
+            "submitted_at": "2026-06-15T10:00:00",
+            "scenario_ko": "지난달 상황",
+            "target_expressions": [],
+            "turns": [
+                {"role": "assistant", "text": "Hi"},
+                {"role": "user", "text": "Hello", "audio_sec": 1.0},
+            ],
+        },
+        {
+            "session_date": "2026-07-09",
+            "submitted_at": "2026-07-09T10:00:00",
+            "scenario_ko": "이달 상황",
+            "target_expressions": [],
+            "turns": [
+                {"role": "assistant", "text": "Hello"},
+                {"role": "user", "text": "Hi", "audio_sec": 2.0},
+            ],
+        },
+    ]
+
+    write_json(SPEAKING_SESSIONS_FILE, sessions)
+    write_json(SPEAKING_SUBMISSIONS_FILE, submissions)
+
+    # Mock today to be in July 2026
+    with patch("english_speaking.TODAY") as mock_today:
+        mock_today.return_value = "2026-07-09"
+
+        stats = speaking_stats()
+
+        assert stats["total_sessions"] == 2
+        assert stats["this_month_sessions"] == 1  # Only July
+        assert stats["total_audio_sec"] == 3.0  # Both months' audio
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

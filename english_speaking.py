@@ -638,6 +638,86 @@ def format_speaking_feedback(analysis: dict):
     return "\n".join(lines)
 
 
+def speaking_stats() -> dict:
+    """
+    Query speaking sessions and compute statistics.
+
+    Returns: dict with keys:
+      - total_sessions: int
+      - this_month_sessions: int
+      - total_audio_sec: float (sum of user audio_sec from submissions)
+      - recent_scenario: str (scenario_ko of latest session or "기록 없음")
+      - mode_breakdown: dict {"roleplay": count, "shadowing": count}
+
+    Returns empty/zero stats if files don't exist or are empty.
+    """
+    from datetime import date
+
+    result = {
+        "total_sessions": 0,
+        "this_month_sessions": 0,
+        "total_audio_sec": 0.0,
+        "recent_scenario": "기록 없음",
+        "mode_breakdown": {"roleplay": 0, "shadowing": 0},
+    }
+
+    # Load sessions metadata
+    if not os.path.exists(SPEAKING_SESSIONS_FILE):
+        return result
+
+    try:
+        sessions = read_json(SPEAKING_SESSIONS_FILE, [])
+        if not sessions:
+            return result
+
+        result["total_sessions"] = len(sessions)
+
+        # Count this month
+        this_month = str(date.today())[:7]  # "YYYY-MM"
+        result["this_month_sessions"] = sum(
+            1 for s in sessions
+            if isinstance(s, dict) and s.get("date", "").startswith(this_month)
+        )
+
+        # Get recent scenario
+        for session in reversed(sessions):
+            if isinstance(session, dict) and session.get("scenario_ko"):
+                result["recent_scenario"] = session["scenario_ko"]
+                break
+
+        # Mode breakdown
+        for session in sessions:
+            if isinstance(session, dict):
+                mode = session.get("mode", "roleplay")
+                result["mode_breakdown"][mode] = result["mode_breakdown"].get(mode, 0) + 1
+
+    except Exception as e:
+        print(f"⚠️ speaking_stats 읽기 실패: {e}")
+
+    # Load submissions to calculate total audio
+    if not os.path.exists(SPEAKING_SUBMISSIONS_FILE):
+        return result
+
+    try:
+        submissions = read_json(SPEAKING_SUBMISSIONS_FILE, [])
+        if not submissions:
+            return result
+
+        for submission in submissions:
+            if isinstance(submission, dict):
+                turns = submission.get("turns", [])
+                for turn in turns:
+                    if isinstance(turn, dict) and "audio_sec" in turn:
+                        # ponytail: count any turn with audio_sec (user in roleplay, all in shadowing)
+                        result["total_audio_sec"] += turn.get("audio_sec", 0.0)
+
+    except Exception as e:
+        print(f"⚠️ speaking_stats 오디오 계산 실패: {e}")
+
+    result["total_audio_sec"] = round(result["total_audio_sec"], 1)
+    return result
+
+
 def finalize_session():
     """
     End the current speaking session.

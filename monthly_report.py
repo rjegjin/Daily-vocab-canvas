@@ -76,6 +76,101 @@ def _monthly_cost(year: int, month: int) -> float:
     return round(total, 4)
 
 
+def _speaking_metrics(year: int, month: int) -> dict:
+    """
+    Calculate speaking session metrics for a given month.
+    Returns: dict with keys:
+      - sessions_count: int (total sessions this month)
+      - target_hit_rate: float (0-100, based on analysis data)
+      - avg_turn_length: float (average words per turn)
+      - speaking_error_resolved: float (0-100, weak=False ratio for speaking_error items)
+    """
+    prefix = f"{year:04d}-{month:02d}"
+
+    result = {
+        "sessions_count": 0,
+        "target_hit_rate": 0.0,
+        "avg_turn_length": 0.0,
+        "speaking_error_resolved": 0.0,
+    }
+
+    # Count sessions and calculate target hit rate
+    submissions_path = PROJECT_DIR / "speaking_submissions.json"
+    if submissions_path.exists():
+        try:
+            with open(submissions_path, "r", encoding="utf-8") as f:
+                submissions = json.load(f)
+            if not isinstance(submissions, list):
+                submissions = []
+
+            this_month_submissions = [
+                s
+                for s in submissions
+                if isinstance(s, dict)
+                and s.get("session_date", "").startswith(prefix)
+            ]
+            result["sessions_count"] = len(this_month_submissions)
+
+            # Calculate target hit rate and avg turn length from analysis
+            hit_counts = []
+            total_words = []
+            for submission in this_month_submissions:
+                analysis = submission.get("analysis")
+                if analysis and isinstance(analysis, dict):
+                    # Target hit rate
+                    target_hit = analysis.get("target_hit", {})
+                    if isinstance(target_hit, dict):
+                        used = len(target_hit.get("used_well", []))
+                        missed = len(target_hit.get("missed", []))
+                        total_targets = used + missed
+                        if total_targets > 0:
+                            hit_counts.append(used / total_targets)
+
+                    # Average turn length from metrics
+                    metrics = analysis.get("metrics", {})
+                    if isinstance(metrics, dict):
+                        avg_words = metrics.get("avg_words_per_turn", 0)
+                        if avg_words > 0:
+                            total_words.append(avg_words)
+
+            if hit_counts:
+                result["target_hit_rate"] = round(
+                    sum(hit_counts) / len(hit_counts) * 100, 1
+                )
+            if total_words:
+                result["avg_turn_length"] = round(sum(total_words) / len(total_words), 1)
+
+        except Exception as e:
+            print(f"⚠️ 말하기 메트릭 계산 실패: {e}")
+
+    # Calculate speaking error resolution rate
+    learned_path = PROJECT_DIR / "learned_data_en_phrase.json"
+    if learned_path.exists():
+        try:
+            with open(learned_path, "r", encoding="utf-8") as f:
+                learned = json.load(f)
+            if not isinstance(learned, list):
+                learned = []
+
+            speaking_errors = [
+                item
+                for item in learned
+                if isinstance(item, dict) and item.get("category") == "speaking_error"
+            ]
+            if speaking_errors:
+                resolved = sum(
+                    1 for item in speaking_errors if not item.get("weak", False)
+                )
+                result["speaking_error_resolved"] = round(
+                    resolved / len(speaking_errors) * 100, 1
+                )
+
+        except Exception as e:
+            print(f"⚠️ 말하기 오류 해소율 계산 실패: {e}")
+
+    return result
+
+
 # -------------------------------------------------------------------
 # 리포트 생성
 # -------------------------------------------------------------------
@@ -119,6 +214,21 @@ def build_report(year: int, month: int) -> str:
             top_cats = s['cats'].most_common(3)
             cat_str = '  '.join(f"{c}({n})" for c, n in top_cats)
             lines.append(f"  카테고리: {cat_str}")
+        lines.append("")
+
+    lines.append("──────────────────────")
+
+    # 말하기 세션 지표
+    speaking = _speaking_metrics(year, month)
+    if speaking["sessions_count"] > 0:
+        lines.append(f"🎤 *말하기 세션*")
+        lines.append(f"  세션: {speaking['sessions_count']}회")
+        if speaking["target_hit_rate"] > 0:
+            lines.append(f"  타깃 적중률: {speaking['target_hit_rate']}%")
+        if speaking["avg_turn_length"] > 0:
+            lines.append(f"  평균 턴 길이: {speaking['avg_turn_length']}단어")
+        if speaking["speaking_error_resolved"] > 0:
+            lines.append(f"  오류 해소율: {speaking['speaking_error_resolved']}%")
         lines.append("")
 
     lines.append("──────────────────────")
