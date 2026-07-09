@@ -260,6 +260,9 @@ def _menu_inline() -> InlineKeyboardMarkup:
         ],
         [
             IKB("🎙️ EN 말하기", callback_data="en:speaking:start"),
+            IKB("🗣️ 따라 읽기", callback_data="en:speaking:shadow")
+        ],
+        [
             IKB("⏹ 세션 종료", callback_data="en:speaking:end")
         ],
         [
@@ -370,6 +373,11 @@ def _send_more_lang_dialogue(lang: str):
 def _start_speaking_session():
     from english_speaking import start_speaking_session
     success, message = start_speaking_session()
+    return message
+
+def _start_shadowing_session():
+    from english_speaking import start_shadowing_session
+    success, message = start_shadowing_session()
     return message
 
 def _handle_voice_message(audio_path: str, duration_sec: float):
@@ -557,6 +565,9 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await query.message.reply_text("✅ 자신 있음으로 기록했습니다.")
         elif kind == "speaking" and action == "start":
             msg = await asyncio.to_thread(_start_speaking_session)
+            await query.message.reply_text(msg)
+        elif kind == "speaking" and action == "shadow":
+            msg = await asyncio.to_thread(_start_shadowing_session)
             await query.message.reply_text(msg)
         elif kind == "speaking" and action == "end":
             msg = await asyncio.to_thread(_end_speaking_session)

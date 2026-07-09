@@ -538,5 +538,256 @@ def test_weak_merge_order():
         assert beautiful_item["weak_date"] == "2026-07-09"  # Should have today's date
 
 
+def test_start_shadowing_session_success():
+    """Test successful shadowing session startup."""
+    from english_speaking import start_shadowing_session
+    from english_core import ENGLISH_STATE_FILE, write_json
+
+    # Clear state and set up latest dialogue
+    state = {
+        "latest_en_dialogue": {
+            "date": "2026-07-09",
+            "item": {
+                "scenario_ko": "공항에서 짐을 찾는 상황",
+                "target_expressions": ["Where is my luggage?"],
+                "model_dialogue": [
+                    {"role": "A", "text": "Hello, where is my luggage?"},
+                    {"role": "B", "text": "Let me check for you."},
+                    {"role": "A", "text": "Thank you very much."},
+                ],
+            }
+        }
+    }
+    write_json(ENGLISH_STATE_FILE, state)
+
+    with patch("english_speaking.send_message") as mock_send, \
+         patch("english_speaking.check_budget_exit"):
+
+        success, message = start_shadowing_session()
+
+        assert success is True
+        assert "쉐도잉" in message
+
+        # Verify state was saved
+        from english_core import get_state
+        state = get_state()
+        assert "speaking_session" in state
+        session = state["speaking_session"]
+        assert session["mode"] == "shadowing"
+        assert session["current_index"] == 0
+        assert len(session["sentences"]) == 2  # Two role A sentences
+        assert session["sentences"][0] == "Hello, where is my luggage?"
+
+
+def test_start_shadowing_session_no_dialogue():
+    """Test rejection when no dialogue data available."""
+    from english_speaking import start_shadowing_session
+    from english_core import ENGLISH_STATE_FILE, write_json
+
+    write_json(ENGLISH_STATE_FILE, {})
+
+    with patch("english_speaking.check_budget_exit"):
+        success, message = start_shadowing_session()
+
+        assert success is False
+        assert "회화 데이터" in message or "없습니다" in message
+
+
+def test_start_shadowing_with_active_roleplay():
+    """Test rejection of shadowing when roleplay session active."""
+    from english_speaking import start_shadowing_session
+    from english_core import ENGLISH_STATE_FILE, write_json
+
+    # Pre-populate active roleplay session
+    state = {
+        "speaking_session": {
+            "mode": "roleplay",
+            "turns": [{"role": "assistant", "text": "Hello"}],
+        },
+        "latest_en_dialogue": {
+            "date": "2026-07-09",
+            "item": {
+                "scenario_ko": "공항",
+                "target_expressions": [],
+                "model_dialogue": [
+                    {"role": "A", "text": "Hello"},
+                ],
+            }
+        }
+    }
+    write_json(ENGLISH_STATE_FILE, state)
+
+    with patch("english_speaking.check_budget_exit"):
+        success, message = start_shadowing_session()
+
+        assert success is False
+        assert "이미 진행 중인" in message
+
+
+def test_get_diff_report_perfect_match():
+    """Test diff report with perfect match."""
+    from english_speaking import _get_diff_report
+
+    report = _get_diff_report("Hello world", "Hello world")
+
+    assert report["missing_words"] == []
+    assert report["misread_words"] == []
+    assert "완벽" in report["status_message"]
+
+
+def test_get_diff_report_missing_words():
+    """Test diff report with missing words."""
+    from english_speaking import _get_diff_report
+
+    report = _get_diff_report("Hello beautiful world", "Hello world")
+
+    assert "beautiful" in report["missing_words"]
+    assert "누락" in report["status_message"]
+
+
+def test_get_diff_report_misread_words():
+    """Test diff report with misread words."""
+    from english_speaking import _get_diff_report
+
+    report = _get_diff_report("Hello world", "Hello beautiful world")
+
+    assert "beautiful" in report["misread_words"]
+    assert "오독" in report["status_message"]
+
+
+def test_get_diff_report_normalization():
+    """Test diff report handles case and punctuation."""
+    from english_speaking import _get_diff_report
+
+    # Case difference should be ignored
+    report = _get_diff_report("Hello World", "hello world")
+    assert report["missing_words"] == []
+    assert report["misread_words"] == []
+
+    # Punctuation should be ignored
+    report = _get_diff_report("Hello, world!", "Hello world")
+    assert report["missing_words"] == []
+    assert report["misread_words"] == []
+
+
+def test_handle_shadowing_voice_perfect_match():
+    """Test shadowing voice handling with perfect match."""
+    from english_speaking import handle_voice_message
+    from english_core import ENGLISH_STATE_FILE, write_json
+
+    # Setup shadowing session
+    state = {
+        "speaking_session": {
+            "date": "2026-07-09",
+            "mode": "shadowing",
+            "scenario_ko": "공항에서",
+            "target_expressions": [],
+            "sentences": ["Hello, where is my luggage?", "Thank you very much."],
+            "current_index": 0,
+            "turns": [],
+            "started_at": "10:00:00",
+        }
+    }
+    write_json(ENGLISH_STATE_FILE, state)
+
+    with patch("openai.OpenAI") as mock_openai_class, \
+         patch("english_speaking.check_budget_exit"), \
+         patch("english_speaking.log_provider_cost"), \
+         patch("english_speaking.send_message") as mock_send:
+
+        mock_client = MagicMock()
+        mock_openai_class.return_value = mock_client
+        mock_transcript = MagicMock()
+        mock_transcript.text = "Hello, where is my luggage?"
+        mock_client.audio.transcriptions.create.return_value = mock_transcript
+
+        with tempfile.NamedTemporaryFile(suffix=".ogg", delete=False) as f:
+            temp_file = f.name
+            f.write(b"fake audio data")
+
+        try:
+            success, user_text, audio_path, message = handle_voice_message(temp_file, 3.0)
+
+            assert success is True
+            assert user_text == "Hello, where is my luggage?"
+            assert "완벽" in message or "좋습니다" in message or "✅" in message
+
+            # Verify session advanced to next sentence
+            from english_core import get_state
+            session = get_state().get("speaking_session")
+            assert session["current_index"] == 1
+            assert len(session["turns"]) == 1
+        finally:
+            if os.path.exists(temp_file):
+                os.remove(temp_file)
+
+
+def test_handle_shadowing_voice_last_sentence():
+    """Test shadowing voice handling on last sentence completes session."""
+    from english_speaking import handle_voice_message
+    from english_core import ENGLISH_STATE_FILE, SPEAKING_SESSIONS_FILE, write_json
+
+    # Setup shadowing session with only one sentence left
+    state = {
+        "speaking_session": {
+            "date": "2026-07-09",
+            "mode": "shadowing",
+            "scenario_ko": "공항에서",
+            "target_expressions": [],
+            "sentences": ["Thank you very much."],
+            "current_index": 0,
+            "turns": [],
+            "started_at": "10:00:00",
+        }
+    }
+    write_json(ENGLISH_STATE_FILE, state)
+    write_json(SPEAKING_SESSIONS_FILE, [])
+
+    with patch("openai.OpenAI") as mock_openai_class, \
+         patch("english_speaking.check_budget_exit"), \
+         patch("english_speaking.log_provider_cost"):
+
+        mock_client = MagicMock()
+        mock_openai_class.return_value = mock_client
+        mock_transcript = MagicMock()
+        mock_transcript.text = "Thank you very much."
+        mock_client.audio.transcriptions.create.return_value = mock_transcript
+
+        with tempfile.NamedTemporaryFile(suffix=".ogg", delete=False) as f:
+            temp_file = f.name
+            f.write(b"fake audio data")
+
+        try:
+            success, user_text, audio_path, message = handle_voice_message(temp_file, 2.0)
+
+            assert success is False
+            assert "완료" in message or "종료" in message
+
+            # Verify session was cleared
+            from english_core import get_state
+            session = get_state().get("speaking_session")
+            assert session is None
+        finally:
+            if os.path.exists(temp_file):
+                os.remove(temp_file)
+
+
+def test_normalize_text():
+    """Test text normalization."""
+    from english_speaking import _normalize_text
+
+    # Lowercase
+    assert _normalize_text("HELLO") == "hello"
+
+    # Punctuation removal
+    assert _normalize_text("Hello, world!") == "hello world"
+
+    # Whitespace normalization
+    assert _normalize_text("Hello   world") == "hello world"
+
+    # Combined
+    assert _normalize_text("HELLO, World!!!") == "hello world"
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

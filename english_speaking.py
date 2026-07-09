@@ -1,8 +1,10 @@
 """
 English roleplay speaking session with TTS and STT.
 """
+import difflib
 import json
 import os
+import re
 from datetime import date, datetime
 from pathlib import Path
 
@@ -27,6 +29,62 @@ from english_dialogue import generate_dialogue
 
 PROJECT_DIR = Path(__file__).resolve().parent
 VOICE_ASSISTANT = os.getenv("EN_SPEAKING_VOICE", "en-US-Neural2-D")
+
+
+def _normalize_text(text: str) -> str:
+    """Normalize text for comparison: lowercase, remove punctuation, normalize whitespace."""
+    text = text.lower()
+    # Remove punctuation
+    text = re.sub(r"[.,!?;:'\"-]", "", text)
+    # Normalize whitespace
+    text = " ".join(text.split())
+    return text
+
+
+def _get_diff_report(model_text: str, learner_text: str) -> dict:
+    """
+    Compute word-level diff and return report.
+    Returns:
+        dict with keys: missing_words, misread_words, status_message
+    """
+    model_norm = _normalize_text(model_text)
+    learner_norm = _normalize_text(learner_text)
+
+    model_words = model_norm.split()
+    learner_words = learner_norm.split()
+
+    # Use SequenceMatcher to find matching blocks
+    matcher = difflib.SequenceMatcher(None, model_words, learner_words)
+    matching_blocks = matcher.get_matching_blocks()
+
+    # Track which positions are matched
+    model_matched = set()
+    learner_matched = set()
+    for block in matching_blocks:
+        for i in range(block.size):
+            model_matched.add(block.a + i)
+            learner_matched.add(block.b + i)
+
+    # Extract missing and misread
+    missing_words = [model_words[i] for i in range(len(model_words)) if i not in model_matched]
+    misread_words = [learner_words[i] for i in range(len(learner_words)) if i not in learner_matched]
+
+    # Generate message
+    if not missing_words and not misread_words:
+        status = "✅ 완벽합니다!"
+    else:
+        parts = []
+        if missing_words:
+            parts.append(f"누락: {', '.join(missing_words[:5])}")
+        if misread_words:
+            parts.append(f"오독: {', '.join(misread_words[:5])}")
+        status = " | ".join(parts) if parts else "✅ 좋습니다!"
+
+    return {
+        "missing_words": missing_words,
+        "misread_words": misread_words,
+        "status_message": status,
+    }
 
 
 def _has_active_session():
@@ -136,15 +194,73 @@ Keep it to 1-2 sentences.
     return True, f"✅ 말하기 세션 시작! 음성 메시지로 답해주세요."
 
 
+def start_shadowing_session():
+    """
+    Initialize a shadowing (shadowing read) session.
+    Load today's dialogue, extract model sentences (role A), and start with first one.
+    Returns: (success: bool, message: str)
+    """
+    if _has_active_session():
+        return False, "이미 진행 중인 말하기 세션이 있습니다. 완료 후 다시 시도해주세요."
+
+    check_budget_exit("en")
+
+    state = get_state()
+    today = TODAY()
+
+    # Load today's dialogue
+    latest_dialogue = state.get("latest_en_dialogue", {})
+    dialogue_date = latest_dialogue.get("date")
+    item = None
+
+    if dialogue_date == today:
+        item = latest_dialogue.get("item")
+
+    if not item:
+        return False, "오늘의 회화 데이터가 없습니다. 먼저 '🎬 EN 회화'를 실행해주세요."
+
+    # Extract model dialogue sentences (role A)
+    model_dialogue = item.get("model_dialogue", [])
+    sentences = [turn.get("text") for turn in model_dialogue if turn.get("role") == "A" and turn.get("text")]
+
+    if not sentences:
+        return False, "따라 읽을 모범 문장이 없습니다."
+
+    # Create shadowing session
+    shadowing_session = {
+        "date": today,
+        "mode": "shadowing",
+        "scenario_ko": item.get("scenario_ko", ""),
+        "target_expressions": item.get("target_expressions", []),
+        "sentences": sentences,
+        "current_index": 0,
+        "turns": [],
+        "started_at": datetime.now().strftime("%H:%M:%S"),
+    }
+
+    # Send first sentence
+    first_sentence = sentences[0]
+    send_message(f"🎤 *쉐도잉 시작* 다음 문장을 따라 읽으세요:\n\n\"{first_sentence}\"")
+
+    # Save session state
+    state["speaking_session"] = shadowing_session
+    write_json(ENGLISH_STATE_FILE, state)
+
+    return True, f"✅ 쉐도잉 세션 시작! 문장을 따라 읽고 음성 메시지를 보내세요."
+
+
 def handle_voice_message(audio_path: str, duration_sec: float):
     """
     Handle incoming voice message.
-    Transcribe -> Generate response -> TTS
+    Branches by session mode:
+    - roleplay: Transcribe -> Generate response -> TTS
+    - shadowing: Transcribe -> Diff against model sentence -> Move to next or end
+
     Returns: (success: bool, user_text: str, response_audio_path_or_none: str, bot_response: str)
-      - success: True if processing succeeded and session continues, False if max_turns reached or error
+      - success: True if processing succeeded and session continues, False if session ends or error
       - user_text: transcribed user utterance
-      - response_audio_path_or_none: path to TTS audio file for bot response, or None if TTS failed
-      - bot_response: bot's next utterance text (or error message if success=False)
+      - response_audio_path_or_none: path to TTS audio file (roleplay only), or None
+      - bot_response: bot's next utterance text (or feedback/error message)
     """
     state = get_state()
     session = state.get("speaking_session")
@@ -153,6 +269,24 @@ def handle_voice_message(audio_path: str, duration_sec: float):
         return False, "", None, "진행 중인 말하기 세션이 없습니다."
 
     check_budget_exit("en")
+
+    # Branch by mode
+    if session.get("mode") == "shadowing":
+        return _handle_shadowing_voice(audio_path, duration_sec)
+    else:
+        return _handle_roleplay_voice(audio_path, duration_sec)
+
+    # This line should never be reached due to branching above
+    return False, "", None, "세션 모드를 인식하지 못했습니다."
+
+
+def _handle_roleplay_voice(audio_path: str, duration_sec: float):
+    """Handle roleplay mode voice message."""
+    state = get_state()
+    session = state.get("speaking_session")
+
+    if not session:
+        return False, "", None, "진행 중인 말하기 세션이 없습니다."
 
     # Transcribe audio to text
     try:
@@ -257,6 +391,113 @@ Return a JSON object with only one key "text" containing your next utterance.
         print(f"⚠️ 응답 TTS 실패 (계속): {e}")
 
     return True, user_text, response_audio_path, bot_response
+
+
+def _handle_shadowing_voice(audio_path: str, duration_sec: float):
+    """Handle shadowing mode voice message."""
+    state = get_state()
+    session = state.get("speaking_session")
+
+    if not session:
+        return False, "", None, "진행 중인 말하기 세션이 없습니다."
+
+    # Transcribe audio
+    try:
+        from openai import OpenAI
+        client = OpenAI()
+
+        with open(audio_path, "rb") as f:
+            transcript = client.audio.transcriptions.create(
+                model="gpt-4o-mini-transcribe",
+                file=f,
+            )
+        user_text = transcript.text or ""
+
+        # Log STT cost
+        cost = (duration_sec / 60.0) * 0.003
+        log_provider_cost(
+            "en",
+            "openai_stt",
+            cost,
+            model="gpt-4o-mini-transcribe",
+            audio_sec=duration_sec,
+        )
+    except Exception as e:
+        return False, "", None, f"❌ 음성 변환 실패: {e}"
+
+    if not user_text:
+        return False, "", None, "음성을 인식하지 못했습니다. 다시 시도해주세요."
+
+    # Get current sentence and perform diff
+    current_index = session.get("current_index", 0)
+    sentences = session.get("sentences", [])
+
+    if current_index >= len(sentences):
+        state.pop("speaking_session", None)
+        write_json(ENGLISH_STATE_FILE, state)
+        return False, user_text, None, "✅ 모든 문장을 완료했습니다. 세션이 종료되었습니다."
+
+    model_sentence = sentences[current_index]
+
+    # Perform word-level diff
+    diff_report = _get_diff_report(model_sentence, user_text)
+
+    # Record turn
+    session["turns"].append({
+        "sentence_index": current_index,
+        "model_text": model_sentence,
+        "user_text": user_text,
+        "audio_sec": duration_sec,
+        "diff_report": diff_report,
+    })
+
+    # Move to next sentence
+    session["current_index"] = current_index + 1
+
+    # Check if we've reached the last sentence
+    if session["current_index"] >= len(sentences):
+        # Session complete
+        state.pop("speaking_session", None)
+        write_json(ENGLISH_STATE_FILE, state)
+
+        # Record to history
+        try:
+            session_record = {
+                "date": session.get("date", TODAY()),
+                "mode": "shadowing",
+                "scenario_ko": session.get("scenario_ko", ""),
+                "turn_count": len(session["turns"]),
+                "target_expressions": session.get("target_expressions", []),
+                "feedback_sent": False,
+            }
+            add_history(SPEAKING_SESSIONS_FILE, session_record, limit=250)
+
+            submission_record = {
+                "session_date": session.get("date", TODAY()),
+                "submitted_at": datetime.now().isoformat(timespec="seconds"),
+                "scenario_ko": session.get("scenario_ko", ""),
+                "target_expressions": session.get("target_expressions", []),
+                "mode": "shadowing",
+                "turns": session["turns"],
+            }
+            add_history(SPEAKING_SUBMISSIONS_FILE, submission_record, limit=250)
+        except Exception as e:
+            print(f"⚠️ 이력 기록 실패 (계속): {e}")
+
+        feedback_msg = f"✅ {len(session['turns'])}문장을 완료했습니다. 쉐도잉 세션이 종료되었습니다."
+        return False, user_text, None, feedback_msg
+
+    else:
+        # Continue to next sentence
+        next_sentence = sentences[session["current_index"]]
+        state["speaking_session"] = session
+        write_json(ENGLISH_STATE_FILE, state)
+
+        # Send next sentence for shadowing
+        send_message(f"📍 다음 문장을 따라 읽으세요:\n\n\"{next_sentence}\"")
+
+        feedback_msg = diff_report["status_message"]
+        return True, user_text, None, feedback_msg
 
 
 def analyze_session(session: dict):
@@ -419,8 +660,10 @@ def finalize_session():
         "turns": turns,
     }
 
-    # Analyze session
-    analysis = analyze_session(session)
+    # Analyze session (roleplay only; shadowing uses diff report instead)
+    analysis = None
+    if session.get("mode") == "roleplay":
+        analysis = analyze_session(session)
 
     # If analysis succeeded, add it to submission record and send feedback
     if analysis:
