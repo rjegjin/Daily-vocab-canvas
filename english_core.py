@@ -37,6 +37,8 @@ JA_DIALOGUE_HISTORY_FILE = PROJECT_DIR / "dialogue_history_ja.json"
 ZH_DIALOGUE_HISTORY_FILE = PROJECT_DIR / "dialogue_history_zh.json"
 WRITING_SESSIONS_FILE = PROJECT_DIR / "writing_sessions.json"
 WRITING_SUBMISSIONS_FILE = PROJECT_DIR / "writing_submissions.json"
+SPEAKING_SESSIONS_FILE = PROJECT_DIR / "speaking_sessions.json"
+SPEAKING_SUBMISSIONS_FILE = PROJECT_DIR / "speaking_submissions.json"
 ENGLISH_STATE_FILE = PROJECT_DIR / "english_state.json"
 
 
