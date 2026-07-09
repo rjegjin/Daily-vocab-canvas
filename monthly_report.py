@@ -76,6 +76,91 @@ def _monthly_cost(year: int, month: int) -> float:
     return round(total, 4)
 
 
+def _speaking_metrics(year: int, month: int) -> dict:
+    """
+    Calculate speaking session metrics for a given month from SPEAKING_SESSIONS_FILE.
+    Returns: dict with keys:
+      - sessions_count: int (total sessions this month)
+      - target_hit_rate: float (0-100, based on target_hit field)
+      - avg_turn_length: float (average of avg_turn_words)
+      - speaking_error_resolved: float (0-100, weak=False ratio for speaking_error items)
+    """
+    prefix = f"{year:04d}-{month:02d}"
+
+    result = {
+        "sessions_count": 0,
+        "target_hit_rate": 0.0,
+        "avg_turn_length": 0.0,
+        "speaking_error_resolved": 0.0,
+    }
+
+    # Count sessions and calculate metrics from SPEAKING_SESSIONS_FILE
+    sessions_path = PROJECT_DIR / "speaking_sessions.json"
+    if sessions_path.exists():
+        try:
+            with open(sessions_path, "r", encoding="utf-8") as f:
+                sessions = json.load(f)
+            if not isinstance(sessions, list):
+                sessions = []
+
+            this_month_sessions = [
+                s
+                for s in sessions
+                if isinstance(s, dict) and s.get("date", "").startswith(prefix)
+            ]
+            result["sessions_count"] = len(this_month_sessions)
+
+            # Calculate target hit rate and avg turn length
+            target_hits = []
+            avg_words = []
+            for session in this_month_sessions:
+                # Target hit: only for roleplay sessions with analysis
+                if session.get("target_hit") is True:
+                    target_hits.append(1.0)
+                elif session.get("target_hit") is False:
+                    target_hits.append(0.0)
+
+                # Average turn length
+                avg_turn = session.get("avg_turn_words", 0.0)
+                if avg_turn > 0:
+                    avg_words.append(avg_turn)
+
+            if target_hits:
+                result["target_hit_rate"] = round(sum(target_hits) / len(target_hits) * 100, 1)
+            if avg_words:
+                result["avg_turn_length"] = round(sum(avg_words) / len(avg_words), 1)
+
+        except Exception as e:
+            print(f"⚠️ 말하기 메트릭 계산 실패: {e}")
+
+    # Calculate speaking error resolution rate
+    learned_path = PROJECT_DIR / "learned_data_en_phrase.json"
+    if learned_path.exists():
+        try:
+            with open(learned_path, "r", encoding="utf-8") as f:
+                learned = json.load(f)
+            if not isinstance(learned, list):
+                learned = []
+
+            speaking_errors = [
+                item
+                for item in learned
+                if isinstance(item, dict) and item.get("category") == "speaking_error"
+            ]
+            if speaking_errors:
+                resolved = sum(
+                    1 for item in speaking_errors if not item.get("weak", False)
+                )
+                result["speaking_error_resolved"] = round(
+                    resolved / len(speaking_errors) * 100, 1
+                )
+
+        except Exception as e:
+            print(f"⚠️ 말하기 오류 해소율 계산 실패: {e}")
+
+    return result
+
+
 # -------------------------------------------------------------------
 # 리포트 생성
 # -------------------------------------------------------------------
@@ -119,6 +204,21 @@ def build_report(year: int, month: int) -> str:
             top_cats = s['cats'].most_common(3)
             cat_str = '  '.join(f"{c}({n})" for c, n in top_cats)
             lines.append(f"  카테고리: {cat_str}")
+        lines.append("")
+
+    lines.append("──────────────────────")
+
+    # 말하기 세션 지표
+    speaking = _speaking_metrics(year, month)
+    if speaking["sessions_count"] > 0:
+        lines.append(f"🎤 *말하기 세션*")
+        lines.append(f"  세션: {speaking['sessions_count']}회")
+        if speaking["target_hit_rate"] > 0:
+            lines.append(f"  타깃 적중률: {speaking['target_hit_rate']}%")
+        if speaking["avg_turn_length"] > 0:
+            lines.append(f"  평균 턴 길이: {speaking['avg_turn_length']}단어")
+        if speaking["speaking_error_resolved"] > 0:
+            lines.append(f"  오류 해소율: {speaking['speaking_error_resolved']}%")
         lines.append("")
 
     lines.append("──────────────────────")

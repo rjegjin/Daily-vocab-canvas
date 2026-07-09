@@ -7,6 +7,7 @@ import json
 from datetime import datetime
 from dotenv import load_dotenv
 from card_engine import generate_tts, send_audio_to_telegram, send_text_to_telegram
+from vocab_feedback import merge_supplement_items, save_latest_supplement, send_supplement_feedback_buttons
 
 # -------------------------------------------------------------------
 # 환경 변수
@@ -103,6 +104,15 @@ if __name__ == "__main__":
     day_of_week = datetime.now().weekday()  # 0=월, 6=일
     base_idx = (day_of_week * 5) % len(WORDS)
     selected_words = WORDS[base_idx:base_idx+5] if base_idx + 5 <= len(WORDS) else WORDS[base_idx:] + WORDS[:5-(len(WORDS)-base_idx)]
+    rule_items = [
+        {
+            "id": f"onkun_{kanji}",
+            "title": f"{kanji} ({jp_onkun})",
+            "rule_name": "한국어 한자음과 일본어 읽기 비교",
+            "category": "音読み/訓読み",
+        }
+        for kanji, kor_sound, jp_onkun, zh_pinyin, meaning in selected_words
+    ]
 
     # 텍스트 생성
     text_content = f"""🎯 *日本語 音訓ルール* ({datetime.now().strftime('%A')})
@@ -121,6 +131,9 @@ if __name__ == "__main__":
 
     # 텔레그램으로 텍스트 전송
     send_text_to_telegram(text_content, TOKEN, CHAT_ID)
+    merge_supplement_items("ja_rules", rule_items)
+    save_latest_supplement("ja_rules", rule_items)
+    send_supplement_feedback_buttons("ja_rules")
 
     # 각 단어별 음성 생성 및 전송 (처음 3개만)
     for i, (kanji, kor_sound, jp_onkun, zh_pinyin, meaning) in enumerate(selected_words[:3]):

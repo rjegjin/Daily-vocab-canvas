@@ -1,6 +1,6 @@
 """
 스페인어 단어 카드 생성기
-word + IPA + 한국어 의미 + 예문
+word + IPA + English meaning + example
 """
 import os
 import json
@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 from google import genai
 from PIL import ImageFont
 
-from card_engine import generate_icons, create_flashcard, send_to_telegram, check_budget_exit
+from card_engine import generate_icons, create_flashcard, send_to_telegram, check_budget_exit, generate_vocab_openai
 
 # -------------------------------------------------------------------
 # 환경 변수
@@ -21,13 +21,14 @@ load_dotenv(os.path.join(os.path.dirname(PROJECT_DIR), '.secrets', '.env'))
 TOKEN   = os.getenv('VOCAB_BOT_TOKEN') or os.getenv('GEMINI_BOT_TOKEN')
 CHAT_ID = os.getenv('VOCAB_CHAT_ID')   or os.getenv('GEMINI_CHAT_ID')
 API_KEY = os.getenv('GEMINI_API_KEY')
+TEXT_PROVIDER = os.getenv('VOCAB_TEXT_PROVIDER', 'openai').lower()
 LEARNED_FILE = os.path.join(PROJECT_DIR, 'learned_words.txt')
 
-if not API_KEY or not TOKEN or not CHAT_ID:
+if (TEXT_PROVIDER != 'openai' and not API_KEY) or not TOKEN or not CHAT_ID:
     print("❌ 환경 변수가 설정되지 않았습니다.")
     exit(1)
 
-client = genai.Client(api_key=API_KEY)
+client = genai.Client(api_key=API_KEY) if API_KEY else None
 
 # 폰트
 _DIR = os.path.dirname(os.path.abspath(__file__))
@@ -51,6 +52,7 @@ def fields_fn(item, fonts):
 # 단어 데이터 생성 (JSON 기반)
 # -------------------------------------------------------------------
 LEARNED_JSON_FILE = os.path.join(PROJECT_DIR, 'learned_data_es.json')
+REQUIRED_KEYS = {'word', 'ipa', 'meaning', 'example', 'category', 'visual'}
 
 def load_learned_json():
     """learned_data_es.json에서 단어 목록 로드"""
@@ -94,9 +96,11 @@ def generate_vocab(learned, weak_words=None):
     For each word, provide:
     - "word": The Spanish word
     - "ipa": The IPA pronunciation
-    - "meaning": Korean meaning (1-3 words, e.g. "기쁨", "차가운 바람")
+    - "meaning": English meaning (1-3 words, e.g. "joy", "cold wind")
     - "example": A short, simple Spanish example sentence (max 8 words)
     - "category": One of: emotion, nature, object, action, food, animal, body, concept, place, time
+    - "visual": A concrete English visual phrase for drawing an icon (2-5 words, no Spanish text).
+      Use visible objects/actions only, e.g. "bright spark", "walking feet", "wooden cabin".
 
     Output strictly valid JSON. No markdown formatting, just the raw JSON array.
     """
@@ -104,7 +108,22 @@ def generate_vocab(learned, weak_words=None):
         t = r.text.strip()
         if t.startswith("```json"): t = t[7:]
         if t.endswith("```"): t = t[:-3]
-        return json.loads(t.strip())
+        data = json.loads(t.strip())
+        if not isinstance(data, list) or len(data) != 9:
+            raise ValueError("Gemini 응답이 9개 JSON 배열이 아닙니다.")
+        for idx, item in enumerate(data, start=1):
+            missing = REQUIRED_KEYS - set(item)
+            if missing:
+                raise ValueError(f"{idx}번째 항목 필수 필드 누락: {sorted(missing)}")
+        return data
+
+    if TEXT_PROVIDER == 'openai':
+        try:
+            data, txt_in, txt_out = generate_vocab_openai(prompt, REQUIRED_KEYS, 'es')
+            return data, txt_in, txt_out
+        except Exception as e:
+            print(f"⚠️ OpenAI 단어 생성 실패: {e}")
+            return None, 0, 0
 
     for model in ['gemini-3.1-flash-lite-preview', 'gemini-2.5-flash']:
         try:

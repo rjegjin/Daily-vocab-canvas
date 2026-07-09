@@ -1,0 +1,182 @@
+[
+  {
+    "date": "2026-06-09",
+    "domain": "workplace",
+    "complement_focus": "结果补语",
+    "scenario_ko": "직장에서 업무 결과를 보고하는 상황",
+    "target_patterns": [
+      "做完 (zuò wán) + 任务",
+      "完成 (wánchéng) + 工作",
+      "找到 (zhǎodào) + 解决方案"
+    ],
+    "tts_sent": true
+  },
+  {
+    "date": "2026-06-10",
+    "domain": "service",
+    "complement_focus": "方向补语",
+    "scenario_ko": "고객이 레스토랑에서 음식을 주문하고 배달 방향에 대해 문의하는 상황",
+    "target_patterns": [
+      "请问，菜怎么送？",
+      "请送到房间里。",
+      "他会送到二楼吗？"
+    ],
+    "tts_sent": true
+  },
+  {
+    "date": "2026-06-11",
+    "domain": "social",
+    "complement_focus": "程度补语",
+    "scenario_ko": "친구와 함께 카페에서 커피를 마시며 오늘의 하루를 이야기하는 상황",
+    "target_patterns": [
+      "吃得很饱",
+      "喝得很快",
+      "学得很好"
+    ],
+    "tts_sent": true
+  },
+  {
+    "date": "2026-06-12",
+    "domain": "travel",
+    "complement_focus": "可能补语",
+    "scenario_ko": "한국인 여행자가 중국에서 교통편을 예약하려고 할 때",
+    "target_patterns": [
+      "可能补语的结构 (e.g., 会、可能、能)",
+      "表示可能性的位置 (如动词前后)",
+      "询问可能性的表达 (比如：这辆车可能会迟到吗？)"
+    ],
+    "tts_sent": true
+  },
+  {
+    "date": "2026-06-13",
+    "domain": "workplace",
+    "complement_focus": "结果补语",
+    "scenario_ko": "직장에서 업무 결과를 보고하는 상황에서 직원과 상사의 대화",
+    "target_patterns": [
+      "把...做完",
+      "就...了",
+      "得..."
+    ],
+    "tts_sent": true
+  },
+  {
+    "date": "2026-06-14",
+    "domain": "service",
+    "complement_focus": "方向补语",
+    "scenario_ko": "레스토랑에서 손님이 직원에게 음식을 배달하는 상황",
+    "target_patterns": [
+      "我去[地点]。",
+      "我到[地点]。",
+      "我正要去[地点]。"
+    ],
+    "tts_sent": true
+  },
+  {
+    "date": "2026-06-15",
+    "domain": "social",
+    "complement_focus": "程度补语",
+    "scenario_ko": "친구와 함께 카페에서 맛있는 커피를 마시며 이야기를 나누는 상황",
+    "target_patterns": [
+      "很+形容词",
+      "非常+形容词",
+      "比+别的+事物+更+形容词"
+    ],
+    "tts_sent": true
+  },
+  {
+    "date": "2026-06-16",
+    "domain": "travel",
+    "complement_focus": "可能补语",
+    "scenario_ko": "한국 여행자가 중국의 관광지에서 교통편과 관광 일정에 대해 묻는 상황",
+    "target_patterns": [
+      "能 + V + 吗",
+      "会不会 + V",
+      "可能 + V"
+    ],
+    "tts_sent": true
+  },
+  {
+    "date": "2026-06-17",
+    "domain": "workplace",
+    "complement_focus": "结果补语",
+    "scenario_ko": "직장 동료와 업무 성과에 대해 이야기하는 상황",
+    "target_patterns": [
+      "我做完了这个项目",
+      "他成功地解决了问题",
+      "我们达到了目标"
+    ],
+    "tts_sent": true
+  },
+  {
+    "date": "2026-06-18",
+    "domain": "service",
+    "complement_focus": "方向补语",
+    "scenario_ko": "고객이 레스토랑에서 음식 배달 위치를 확인하는 상황",
+    "target_patterns": [
+      "往...方向走",
+      "在...的方向",
+      "向...走"
+    ],
+    "tts_sent": true
+  },
+  {
+    "date": "2026-06-19",
+    "domain": "social",
+    "complement_focus": "程度补语",
+    "scenario_ko": "친구와 함께 카페에서 오늘의 날씨와 기분을 이야기하는 상황.",
+    "target_patterns": [
+      "我觉得+程度补语",
+      "今天天气+状态",
+      "我很+程度补语"
+    ],
+    "tts_sent": true
+  },
+  {
+    "date": "2026-06-20",
+    "domain": "travel",
+    "complement_focus": "可能补语",
+    "scenario_ko": "한국인이 중국 여행을 하며 교통편과 관광지 방문 계획을 세우는 상황",
+    "target_patterns": [
+      "我能不能搭乘公交车去那儿？",
+      "这趟公交车会不会到达？",
+      "我可能会在下午去那里。"
+    ],
+    "tts_sent": true
+  },
+  {
+    "date": "2026-07-06",
+    "domain": "workplace",
+    "complement_focus": "可能补语 (Potential Complements)",
+    "scenario_ko": "직장 동료에게 오늘 예정된 마케팅 기획서 작성을 퇴근 전까지 끝낼 수 있는지 확인하고, 일정이 바빠서 못 끝낼 것 같다는 상황을 대화합니다.",
+    "target_patterns": [
+      "V + 得 + 了/完 (할 수 있다)",
+      "V + 不 + 了/完 (할 수 없다)",
+      "来得及 (시간 내에 할 수 있다)"
+    ],
+    "tts_sent": true
+  },
+  {
+    "date": "2026-07-07",
+    "domain": "service",
+    "complement_focus": "结果补语",
+    "scenario_ko": "식당에서 점원에게 주문한 음식이 아직 나오지 않아 확인을 요청하는 상황입니다.",
+    "target_patterns": [
+      "V + 完 (완료)",
+      "V + 好 (준비됨/완성됨)",
+      "V + 到 (도달/획득)"
+    ],
+    "tts_sent": true
+  },
+  {
+    "date": "2026-07-08",
+    "domain": "social",
+    "complement_focus": "方向补语",
+    "scenario_ko": "친구와 함께 길을 걷다가 지갑을 떨어뜨린 것을 알게 되어, 바닥에 떨어진 지갑을 주워달라고 부탁하는 상황입니다.",
+    "target_patterns": [
+      "掉下来 (diào xià lái)",
+      "捡起来 (jiǎn qǐ lái)",
+      "拿过来 (ná guò lái)"
+    ],
+    "tts_sent": true
+  }
+]

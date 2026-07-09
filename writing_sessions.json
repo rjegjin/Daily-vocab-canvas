@@ -1,0 +1,50 @@
+[
+  {
+    "date": "2026-06-08",
+    "topic_ko": "원격 근무가 직장 문화와 개인의 삶의 균형에 미치는 영향에 대한 본인의 견해",
+    "submitted": false,
+    "feedback_sent": false
+  },
+  {
+    "date": "2026-06-09",
+    "topic_ko": "환경 보호와 개인의 책임",
+    "difficulty": "B2-C1",
+    "target_connectives": [
+      "Furthermore",
+      "In addition",
+      "However",
+      "Therefore"
+    ],
+    "vocabulary_boost": [
+      "sustainable practices",
+      "carbon footprint",
+      "environmental awareness",
+      "collective effort"
+    ],
+    "submitted": false,
+    "submission_count": 0,
+    "latest_scores": null,
+    "feedback_sent": false
+  },
+  {
+    "date": "2026-06-14",
+    "topic_ko": "지속 가능한 생활 방식의 중요성",
+    "difficulty": "B2-C1",
+    "target_connectives": [
+      "Furthermore",
+      "In contrast",
+      "For example",
+      "Therefore"
+    ],
+    "vocabulary_boost": [
+      "ecological footprint",
+      "sustainable practices",
+      "conserve resources",
+      "future generations"
+    ],
+    "submitted": false,
+    "submission_count": 0,
+    "latest_scores": null,
+    "feedback_sent": false
+  }
+]

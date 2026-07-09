@@ -1,0 +1,220 @@
+{
+  "latest_ja_rules": {
+    "date": "2026-07-08",
+    "items": [
+      {
+        "id": "onkun_土",
+        "title": "土 (つち)",
+        "rule_name": "한국어 한자음과 일본어 읽기 비교",
+        "category": "音読み/訓読み"
+      },
+      {
+        "id": "onkun_木",
+        "title": "木 (き)",
+        "rule_name": "한국어 한자음과 일본어 읽기 비교",
+        "category": "音読み/訓読み"
+      },
+      {
+        "id": "onkun_金",
+        "title": "金 (きん)",
+        "rule_name": "한국어 한자음과 일본어 읽기 비교",
+        "category": "音読み/訓読み"
+      },
+      {
+        "id": "onkun_日",
+        "title": "日 (ひ)",
+        "rule_name": "한국어 한자음과 일본어 읽기 비교",
+        "category": "音読み/訓読み"
+      },
+      {
+        "id": "onkun_月",
+        "title": "月 (つき)",
+        "rule_name": "한국어 한자음과 일본어 읽기 비교",
+        "category": "音読み/訓読み"
+      }
+    ]
+  },
+  "latest_zh_tones": {
+    "date": "2026-07-08",
+    "items": [
+      {
+        "id": "tone_pair_mai",
+        "title": "mai 최소대립쌍",
+        "base_syllable": "mai",
+        "category": "minimal_pair"
+      }
+    ]
+  },
+  "latest_zh_vocab": {
+    "date": "2026-07-08",
+    "items": [
+      {
+        "word": "喜爱",
+        "traditional": "喜愛",
+        "pinyin": "xǐ ài",
+        "meaning": "애호, 좋아함",
+        "example": "我喜爱音乐。",
+        "category": "emotion",
+        "visual": "red heart, smiling face"
+      },
+      {
+        "word": "阳光",
+        "traditional": "陽光",
+        "pinyin": "yáng guāng",
+        "meaning": "햇빛",
+        "example": "阳光很灿烂。",
+        "category": "nature",
+        "visual": "bright yellow sun, light rays"
+      },
+      {
+        "word": "地图",
+        "traditional": "地圖",
+        "pinyin": "dì tú",
+        "meaning": "지도",
+        "example": "请看地图。",
+        "category": "object",
+        "visual": "folded paper, world map, compass"
+      },
+      {
+        "word": "奔波",
+        "traditional": "奔波",
+        "pinyin": "bēn bō",
+        "meaning": "분주히 돌아다님",
+        "example": "他四处奔波。",
+        "category": "action",
+        "visual": "running legs, busy feet"
+      },
+      {
+        "word": "海龟",
+        "traditional": "海龜",
+        "pinyin": "hǎi guī",
+        "meaning": "바다거북",
+        "example": "海龟在游泳。",
+        "category": "animal",
+        "visual": "sea turtle, ocean shell"
+      },
+      {
+        "word": "规则",
+        "traditional": "規則",
+        "pinyin": "guī zé",
+        "meaning": "규칙",
+        "example": "遵守规则。",
+        "category": "concept",
+        "visual": "check list, law book, judge gavel"
+      },
+      {
+        "word": "脊背",
+        "traditional": "脊背",
+        "pinyin": "jǐ bèi",
+        "meaning": "등",
+        "example": "脊背很痛。",
+        "category": "body",
+        "visual": "human back, spine line"
+      },
+      {
+        "word": "监狱",
+        "traditional": "監獄",
+        "pinyin": "jiān yù",
+        "meaning": "감옥",
+        "example": "他在监狱里。",
+        "category": "place",
+        "visual": "metal bars, stone wall"
+      },
+      {
+        "word": "下午",
+        "traditional": "下午",
+        "pinyin": "xià wǔ",
+        "meaning": "오후",
+        "example": "下午三点。",
+        "category": "time",
+        "visual": "clock pointing three, afternoon sun"
+      }
+    ]
+  },
+  "latest_ja_vocab": {
+    "date": "2026-07-08",
+    "items": [
+      {
+        "word": "悲しみ",
+        "kyujitai": "",
+        "furigana": "かなしみ",
+        "meaning": "슬픔",
+        "example": "彼女の悲しみが伝わる。",
+        "category": "emotion",
+        "visual": "teardrop, crying face"
+      },
+      {
+        "word": "雲",
+        "kyujitai": "雲",
+        "furigana": "くも",
+        "meaning": "구름",
+        "example": "青い空に白い雲がある。",
+        "category": "nature",
+        "visual": "white puffy cloud, blue sky"
+      },
+      {
+        "word": "椅子",
+        "kyujitai": "椅子",
+        "furigana": "いす",
+        "meaning": "의자",
+        "example": "木製の椅子に座る。",
+        "category": "object",
+        "visual": "wooden chair, seat, furniture"
+      },
+      {
+        "word": "飛ぶ",
+        "kyujitai": "",
+        "furigana": "とぶ",
+        "meaning": "날다",
+        "example": "空高く鳥が飛ぶ。",
+        "category": "action",
+        "visual": "wings spreading, bird soaring"
+      },
+      {
+        "word": "珈琲",
+        "kyujitai": "咖啡",
+        "furigana": "こーひー",
+        "meaning": "커피",
+        "example": "温かい珈琲を飲む。",
+        "category": "food",
+        "visual": "steaming mug, black liquid, coffee beans"
+      },
+      {
+        "word": "鷹",
+        "kyujitai": "鷹",
+        "furigana": "たか",
+        "meaning": "매",
+        "example": "鷹が獲物を狙う。",
+        "category": "animal",
+        "visual": "sharp beak, large wings, brown feathers"
+      },
+      {
+        "word": "腕",
+        "kyujitai": "",
+        "furigana": "うで",
+        "meaning": "팔",
+        "example": "腕を組んで考える。",
+        "category": "body",
+        "visual": "human arm, elbow, bicep"
+      },
+      {
+        "word": "時間",
+        "kyujitai": "時間",
+        "furigana": "じかん",
+        "meaning": "시간",
+        "example": "時間が過ぎるのは早い。",
+        "category": "concept",
+        "visual": "clock hands, ticking watch, sandglass"
+      },
+      {
+        "word": "海",
+        "kyujitai": "海",
+        "furigana": "うみ",
+        "meaning": "바다",
+        "example": "静かな海を見に行く。",
+        "category": "place",
+        "visual": "blue water, crashing waves, horizon"
+      }
+    ]
+  }
+}
