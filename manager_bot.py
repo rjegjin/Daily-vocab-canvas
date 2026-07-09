@@ -259,6 +259,10 @@ def _menu_inline() -> InlineKeyboardMarkup:
             IKB("✍️ EN 글쓰기", callback_data="run:en_writing")
         ],
         [
+            IKB("🎙️ EN 말하기", callback_data="en:speaking:start"),
+            IKB("⏹ 세션 종료", callback_data="en:speaking:end")
+        ],
+        [
             IKB("🇬🇧 EN 오늘 전체", callback_data="run:english_daily")
         ],
         [
@@ -276,7 +280,8 @@ def _menu_reply() -> ReplyKeyboardMarkup:
         ["🇪🇸 스페인어", "🇯🇵 일본어", "🇨🇳 중국어"],
         ["📝 ES 패턴", "📐 JA 규칙", "🎵 ZH 성조"],
         ["🇬🇧 EN 단어", "💬 EN 표현", "🎬 EN 회화"],
-        ["✍️ EN 글쓰기", "🇬🇧 EN 오늘 전체"],
+        ["✍️ EN 글쓰기", "🎙️ EN 말하기"],
+        ["🇬🇧 EN 오늘 전체", "⏹ 세션 종료"],
         ["🎬 JA 회화", "🎬 ZH 회화", "🎬 JA/ZH 회화"],
         ["🔄 전체 일괄 생성", "📊 통계 및 비용 조회"],
         ["💰 비용 현황", "📅 월간 성취 리포트"]
@@ -361,6 +366,21 @@ def _send_more_lang_dialogue(lang: str):
     else:
         from chinese_dialogue import send_more_dialogue
     return bool(send_more_dialogue())
+
+def _start_speaking_session():
+    from english_speaking import start_speaking_session
+    success, message = start_speaking_session()
+    return message
+
+def _handle_voice_message(audio_path: str, duration_sec: float):
+    from english_speaking import handle_voice_message
+    success, user_text, audio_path_response, message = handle_voice_message(audio_path, duration_sec)
+    return success, user_text, audio_path_response, message
+
+def _end_speaking_session():
+    from english_speaking import finalize_session
+    turns_data, message = finalize_session()
+    return message
 
 # -------------------------------------------------------------------
 # 핸들러
@@ -455,6 +475,41 @@ async def cmd_writing_feedback(update: Update, context: ContextTypes.DEFAULT_TYP
     await update.message.reply_text("✍️ 글쓰기 피드백을 생성 중입니다. 완료되면 별도 메시지로 전송됩니다.")
     await asyncio.to_thread(_send_writing_feedback, text)
 
+async def cmd_end_speaking(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    msg = await asyncio.to_thread(_end_speaking_session)
+    await update.message.reply_text(msg)
+
+async def handle_voice(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    voice = update.message.voice
+    if not voice:
+        return
+    duration_sec = voice.duration or 0
+    try:
+        file = await voice.get_file()
+        file_path = os.path.join(PROJECT_DIR, f"voice_{int(datetime.now().timestamp())}.ogg")
+        await file.download_to_drive(file_path)
+
+        success, user_text, audio_path_response, message = await asyncio.to_thread(
+            _handle_voice_message, file_path, duration_sec
+        )
+
+        if success:
+            from english_core import send_audio
+            await update.message.reply_text(f"👤 당신: {user_text}\n\n🤖 봇: {message}")
+            if audio_path_response and os.path.exists(audio_path_response):
+                await update.message.reply_text("🎧 봇 발화를 들으세요...")
+                await asyncio.to_thread(send_audio, audio_path_response, caption="🎤 봇 응답")
+                os.remove(audio_path_response)
+        else:
+            await update.message.reply_text(message)
+
+        if os.path.exists(file_path):
+            os.remove(file_path)
+    except Exception as e:
+        await update.message.reply_text(f"❌ 음성 처리 실패: {e}")
+        if os.path.exists(file_path):
+            os.remove(file_path)
+
 async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -499,6 +554,12 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await query.message.reply_text("💪 기록했습니다. 다음 회화에서 비슷한 난이도 표현을 더 보강하겠습니다.")
         elif kind == "dialogue" and action == "ok":
             await query.message.reply_text("✅ 자신 있음으로 기록했습니다.")
+        elif kind == "speaking" and action == "start":
+            msg = await asyncio.to_thread(_start_speaking_session)
+            await query.message.reply_text(msg)
+        elif kind == "speaking" and action == "end":
+            msg = await asyncio.to_thread(_end_speaking_session)
+            await query.message.reply_text(msg)
     elif data.startswith(("ja_rules:", "zh_tones:")):
         parts = data.split(":")
         kind = parts[0]
@@ -597,6 +658,8 @@ def main():
         CommandHandler("start",  cmd_manage),
         CommandHandler("manage", cmd_manage),
         CommandHandler("writing_feedback", cmd_writing_feedback),
+        CommandHandler("end_speaking", cmd_end_speaking),
+        MessageHandler(filters.VOICE, handle_voice),
         CallbackQueryHandler(handle_callback),
         MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text_menu),
     ]
