@@ -27,7 +27,6 @@ from english_core import (
     write_json,
 )
 from english_dialogue import generate_dialogue
-from openai import OpenAI
 
 PROJECT_DIR = Path(__file__).resolve().parent
 VOICE_ASSISTANT = os.getenv("EN_SPEAKING_VOICE", "en-US-Neural2-D")
@@ -41,6 +40,7 @@ def _transcribe_audio(audio_path: str, duration_sec: float) -> tuple:
       - If failed: ("", error_message)
     """
     try:
+        from openai import OpenAI
         client = OpenAI()
 
         with open(audio_path, "rb") as f:
