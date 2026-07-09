@@ -255,5 +255,288 @@ def test_finalize_session_no_session():
     assert "진행 중인" in message or "no session" in message.lower()
 
 
+def test_analyze_session_basic():
+    """Test analyze_session generates proper analysis."""
+    from english_speaking import analyze_session
+
+    session = {
+        "turns": [
+            {"role": "assistant", "text": "Where do you want to go?"},
+            {"role": "user", "text": "I want go to the park", "audio_sec": 3.0},
+            {"role": "assistant", "text": "That sounds fun!"},
+            {"role": "user", "text": "Yes, I like parks", "audio_sec": 2.0},
+        ],
+        "scenario_ko": "공원 가기",
+        "target_expressions": ["I would like to go to", "It's a great place"],
+    }
+
+    with patch("english_speaking.generate_json_openai") as mock_gen:
+        mock_gen.return_value = {
+            "errors": [
+                {
+                    "original": "I want go to the park",
+                    "corrected": "I want to go to the park",
+                    "reason_ko": "to 전치사 누락",
+                }
+            ],
+            "target_hit": {
+                "used_well": [],
+                "missed": ["I would like to go to", "It's a great place"],
+            },
+            "metrics": {
+                "total_audio_sec": 5.0,
+                "avg_words_per_turn": 4.5,
+                "filler_count": 0,
+            },
+            "next_step": "to 전치사 사용을 더 연습해보세요",
+        }
+
+        result = analyze_session(session)
+
+        assert result is not None
+        assert len(result["errors"]) == 1
+        assert result["errors"][0]["corrected"] == "I want to go to the park"
+        assert "I would like to go to" in result["target_hit"]["missed"]
+        assert result["metrics"]["total_audio_sec"] == 5.0
+        assert "to 전치사" in result["next_step"]
+
+
+def test_analyze_session_failure():
+    """Test analyze_session returns None on LLM failure."""
+    from english_speaking import analyze_session
+
+    session = {
+        "turns": [
+            {"role": "assistant", "text": "Hello"},
+            {"role": "user", "text": "Hi", "audio_sec": 1.0},
+        ],
+        "scenario_ko": "인사",
+        "target_expressions": [],
+    }
+
+    with patch("english_speaking.generate_json_openai") as mock_gen:
+        mock_gen.side_effect = RuntimeError("API 오류")
+
+        result = analyze_session(session)
+
+        assert result is None
+
+
+def test_finalize_session_with_analysis_and_weak_merge():
+    """Test finalize_session with successful analysis and weak merge."""
+    from english_speaking import finalize_session
+    from english_core import (
+        ENGLISH_STATE_FILE,
+        LEARNED_EN_PHRASE_FILE,
+        SPEAKING_SESSIONS_FILE,
+        SPEAKING_SUBMISSIONS_FILE,
+        write_json,
+        read_json,
+    )
+
+    # Setup session
+    state = {
+        "speaking_session": {
+            "date": "2026-07-09",
+            "mode": "roleplay",
+            "scenario_ko": "공항 짐 찾기",
+            "target_expressions": ["Where is my luggage?"],
+            "turns": [
+                {"role": "assistant", "text": "Hello!"},
+                {"role": "user", "text": "I lost my baggage", "audio_sec": 3.0},
+                {"role": "assistant", "text": "Let me help."},
+                {"role": "user", "text": "Thanks", "audio_sec": 1.0},
+            ],
+            "max_turns": 8,
+            "started_at": "10:00:00",
+        }
+    }
+    write_json(ENGLISH_STATE_FILE, state)
+
+    # Clear history files
+    write_json(LEARNED_EN_PHRASE_FILE, [])
+    write_json(SPEAKING_SESSIONS_FILE, [])
+    write_json(SPEAKING_SUBMISSIONS_FILE, [])
+
+    with patch("english_speaking.analyze_session") as mock_analyze, \
+         patch("english_speaking.send_message") as mock_send:
+
+        mock_analyze.return_value = {
+            "errors": [
+                {
+                    "original": "I lost my baggage",
+                    "corrected": "I lost my luggage",
+                    "reason_ko": "baggage → luggage (더 정확한 표현)",
+                }
+            ],
+            "target_hit": {
+                "used_well": [],
+                "missed": ["Where is my luggage?"],
+            },
+            "metrics": {
+                "total_audio_sec": 4.0,
+                "avg_words_per_turn": 2.5,
+                "filler_count": 0,
+            },
+            "next_step": "Lost luggage 상황에서 표현을 더 연습해보세요",
+        }
+
+        turns_data, message = finalize_session()
+
+        assert turns_data is not None
+        assert "분석 완료" in message
+        assert len(turns_data["turns"]) == 4
+
+        # Verify session was cleared
+        from english_core import get_state
+        session = get_state().get("speaking_session")
+        assert session is None
+
+        # Verify learned phrase was merged and marked weak
+        phrases = read_json(LEARNED_EN_PHRASE_FILE, [])
+        assert len(phrases) > 0
+        luggage_item = None
+        for item in phrases:
+            if item.get("phrase") == "I lost my luggage":
+                luggage_item = item
+                break
+        assert luggage_item is not None
+        assert luggage_item["weak"] is True
+        assert luggage_item["category"] == "speaking_error"
+
+        # Verify history was recorded
+        sessions = read_json(SPEAKING_SESSIONS_FILE, [])
+        assert len(sessions) > 0
+        assert sessions[-1]["scenario_ko"] == "공항 짐 찾기"
+        assert sessions[-1]["turn_count"] == 4
+        assert sessions[-1]["feedback_sent"] is True
+
+        submissions = read_json(SPEAKING_SUBMISSIONS_FILE, [])
+        assert len(submissions) > 0
+        assert submissions[-1]["scenario_ko"] == "공항 짐 찾기"
+        assert "analysis" in submissions[-1]
+
+
+def test_finalize_session_analysis_failure_preserves_transcript():
+    """Test finalize_session preserves transcript even if analysis fails."""
+    from english_speaking import finalize_session
+    from english_core import (
+        ENGLISH_STATE_FILE,
+        SPEAKING_SUBMISSIONS_FILE,
+        write_json,
+        read_json,
+    )
+
+    # Setup session
+    state = {
+        "speaking_session": {
+            "date": "2026-07-09",
+            "mode": "roleplay",
+            "scenario_ko": "카페에서 주문",
+            "target_expressions": [],
+            "turns": [
+                {"role": "assistant", "text": "What would you like?"},
+                {"role": "user", "text": "Coffee please", "audio_sec": 2.0},
+            ],
+            "max_turns": 8,
+            "started_at": "10:30:00",
+        }
+    }
+    write_json(ENGLISH_STATE_FILE, state)
+    write_json(SPEAKING_SUBMISSIONS_FILE, [])
+
+    with patch("english_speaking.analyze_session") as mock_analyze, \
+         patch("english_speaking.send_message"):
+
+        mock_analyze.return_value = None  # Simulate analysis failure
+
+        turns_data, message = finalize_session()
+
+        assert turns_data is not None
+        assert "분석 실패" in message
+        assert "전사 기록됨" in message
+
+        # Verify transcript was preserved
+        submissions = read_json(SPEAKING_SUBMISSIONS_FILE, [])
+        assert len(submissions) > 0
+        assert submissions[-1]["scenario_ko"] == "카페에서 주문"
+        assert len(submissions[-1]["turns"]) == 2
+        assert "analysis" not in submissions[-1]
+
+
+def test_weak_merge_order():
+    """Test that weak items are marked correctly: merge then mark."""
+    from english_speaking import finalize_session
+    from english_core import (
+        ENGLISH_STATE_FILE,
+        LEARNED_EN_PHRASE_FILE,
+        write_json,
+        read_json,
+    )
+
+    # Pre-populate learned phrases with an existing weak item
+    existing_phrases = [
+        {
+            "phrase": "beautiful day",
+            "date_added": "2026-07-01",
+            "category": "phrase_card",
+            "seen_count": 2,
+            "weak": True,
+            "weak_date": "2026-07-08",
+        }
+    ]
+    write_json(LEARNED_EN_PHRASE_FILE, existing_phrases)
+
+    # Setup session with error containing the same phrase
+    state = {
+        "speaking_session": {
+            "date": "2026-07-09",
+            "mode": "roleplay",
+            "scenario_ko": "일상 대화",
+            "target_expressions": [],
+            "turns": [
+                {"role": "assistant", "text": "Hello"},
+                {"role": "user", "text": "Hello", "audio_sec": 1.0},
+            ],
+            "max_turns": 8,
+            "started_at": "10:00:00",
+        }
+    }
+    write_json(ENGLISH_STATE_FILE, state)
+
+    with patch("english_speaking.analyze_session") as mock_analyze, \
+         patch("english_speaking.send_message"):
+
+        mock_analyze.return_value = {
+            "errors": [
+                {
+                    "original": "It's beautifull day",
+                    "corrected": "beautiful day",
+                    "reason_ko": "a beautiful day 전체 표현",
+                }
+            ],
+            "target_hit": {"used_well": [], "missed": []},
+            "metrics": {
+                "total_audio_sec": 1.0,
+                "avg_words_per_turn": 1.0,
+                "filler_count": 0,
+            },
+            "next_step": "계속 연습하세요",
+        }
+
+        finalize_session()
+
+        # Verify weak marking: after merge, weak should be reset to False
+        # Then mark_weak should set it back to True
+        phrases = read_json(LEARNED_EN_PHRASE_FILE, [])
+        beautiful_item = next(
+            (p for p in phrases if p.get("phrase") == "beautiful day"),
+            None,
+        )
+        assert beautiful_item is not None
+        assert beautiful_item["weak"] is True  # Should be marked weak
+        assert beautiful_item["weak_date"] == "2026-07-09"  # Should have today's date
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

@@ -10,9 +10,15 @@ from card_engine import check_budget_exit, generate_tts, log_provider_cost
 from english_core import (
     TODAY,
     ENGLISH_STATE_FILE,
+    LEARNED_EN_PHRASE_FILE,
+    SPEAKING_SESSIONS_FILE,
+    SPEAKING_SUBMISSIONS_FILE,
+    add_history,
     generate_english_tts_voice,
     generate_json_openai,
     get_state,
+    mark_weak,
+    merge_learned,
     read_json,
     send_message,
     write_json,
@@ -253,10 +259,144 @@ Return a JSON object with only one key "text" containing your next utterance.
     return True, user_text, response_audio_path, bot_response
 
 
+def analyze_session(session: dict):
+    """
+    Analyze a completed speaking session using LLM.
+
+    Args:
+        session: dict with keys: turns, date, scenario_ko, target_expressions
+
+    Returns:
+        dict with keys: errors, target_hit, metrics, next_step
+        Returns None if analysis fails.
+    """
+    turns = session.get("turns", [])
+    target_expressions = session.get("target_expressions", [])
+    scenario_ko = session.get("scenario_ko", "")
+
+    # Calculate metrics
+    user_turns = [t for t in turns if t.get("role") == "user"]
+    total_audio_sec = sum(t.get("audio_sec", 0) for t in user_turns)
+    avg_words_per_turn = 0
+    if user_turns:
+        total_words = sum(len(t.get("text", "").split()) for t in user_turns)
+        avg_words_per_turn = round(total_words / len(user_turns), 1)
+
+    turns_json = json.dumps(turns, ensure_ascii=False, indent=2)
+
+    prompt = f"""
+Analyze this English roleplay speaking session.
+
+Scenario (Korean): {scenario_ko}
+Target expressions the learner should try: {json.dumps(target_expressions, ensure_ascii=False)}
+
+Conversation turns:
+{turns_json}
+
+Please analyze and return JSON with these keys:
+
+1. errors: array of objects with keys:
+   - original: what the learner said (exact quote from turns)
+   - corrected: grammatically correct version
+   - reason_ko: 1-line explanation in Korean
+
+2. target_hit: object with keys:
+   - used_well: list of target expressions used correctly
+   - missed: list of target expressions NOT used
+
+3. metrics: object with keys:
+   - total_audio_sec: total audio duration (seconds)
+   - avg_words_per_turn: average words in user turns
+   - filler_count: estimated count of fillers like "um", "like", "uh", "you know"
+
+4. next_step: one Korean actionable suggestion for improvement
+
+IMPORTANT: Exclude any items that look like STT errors (gibberish, fragment-only, or completely unrelated to conversation context). Only include clear grammar/expression mistakes that the learner made.
+
+Return raw JSON only. No markdown.
+"""
+
+    try:
+        analysis = generate_json_openai(
+            prompt,
+            required_keys={"errors", "target_hit", "metrics", "next_step"},
+            expect_list=False,
+            lang="en",
+        )
+
+        # Ensure numeric metrics
+        if isinstance(analysis.get("metrics"), dict):
+            analysis["metrics"]["total_audio_sec"] = total_audio_sec
+            if "avg_words_per_turn" not in analysis["metrics"]:
+                analysis["metrics"]["avg_words_per_turn"] = avg_words_per_turn
+
+        return analysis
+    except Exception as e:
+        print(f"⚠️ 세션 분석 실패 (계속): {e}")
+        return None
+
+
+def format_speaking_feedback(analysis: dict):
+    """
+    Format analysis into Telegram feedback message.
+    Follows english_writing.py format_feedback style.
+    """
+    lines = ["📊 *말하기 세션 피드백*", ""]
+
+    # Errors section
+    errors = analysis.get("errors", [])
+    if errors:
+        lines.extend(["✏️ *표현 교정:*"])
+        for error in errors[:5]:
+            lines.append(f"• \"{error.get('original')}\"")
+            lines.append(f"  → \"{error.get('corrected')}\"")
+            lines.append(f"  {error.get('reason_ko', '')}")
+        lines.append("")
+    else:
+        lines.extend(["✏️ *표현 교정:* 특별한 오류가 없었습니다.", ""])
+
+    # Target expression usage
+    target = analysis.get("target_hit", {})
+    used_well = target.get("used_well", [])
+    missed = target.get("missed", [])
+    lines.append("🎯 *타깃 표현 활용:*")
+    if used_well:
+        lines.append(f"✅ 잘 쓴 표현: {' / '.join(used_well)}")
+    if missed:
+        lines.append(f"💡 다음에 써볼 표현: {' / '.join(missed)}")
+    if not used_well and not missed:
+        lines.append("아직 타깃 표현이 없습니다.")
+    lines.append("")
+
+    # Speech metrics
+    metrics = analysis.get("metrics", {})
+    lines.extend([
+        "📈 *발화 지표:*",
+        f"• 총 발화 시간: {metrics.get('total_audio_sec', 0):.1f}초",
+        f"• 평균 턴당 단어: {metrics.get('avg_words_per_turn', 0):.1f}개",
+        f"• 필러 빈도: {metrics.get('filler_count', 0)}회",
+        "",
+    ])
+
+    # Next step
+    lines.append(f"💪 한 단계 더: {analysis.get('next_step', '꾸준히 연습하세요!')}")
+
+    return "\n".join(lines)
+
+
 def finalize_session():
     """
     End the current speaking session.
-    Returns turns data for potential extension (P1-b).
+    Full pipeline: analyze → format feedback → weak merge → history recording.
+
+    Returns:
+        (turns_data, message) tuple
+        - turns_data: dict with turns, date, scenario_ko, or None if no session
+        - message: status message
+
+    Guarantees:
+        - Session state is always removed (even if analysis fails)
+        - Transcripts are always preserved to history (even if analysis fails)
     """
     state = get_state()
     session = state.pop("speaking_session", None)
@@ -267,8 +407,77 @@ def finalize_session():
 
     turns = session.get("turns", [])
     turn_count = len(turns)
+    today = TODAY()
+    session_date = session.get("date", today)
 
+    # Always preserve transcript to history (even if analysis fails)
+    submission_record = {
+        "session_date": session_date,
+        "submitted_at": datetime.now().isoformat(timespec="seconds"),
+        "scenario_ko": session.get("scenario_ko", ""),
+        "target_expressions": session.get("target_expressions", []),
+        "turns": turns,
+    }
+
+    # Analyze session
+    analysis = analyze_session(session)
+
+    # If analysis succeeded, add it to submission record and send feedback
+    if analysis:
+        submission_record["analysis"] = analysis
+
+        # Send feedback card
+        try:
+            feedback_message = format_speaking_feedback(analysis)
+            send_message(feedback_message)
+        except Exception as e:
+            print(f"⚠️ 피드백 전송 실패 (계속): {e}")
+
+        # Extract errors and merge to learned phrases with weak marking
+        errors = analysis.get("errors", [])
+        if errors:
+            # Prepare error items for merge_learned
+            error_items = []
+            for error in errors:
+                corrected = error.get("corrected", "").strip()
+                if corrected:
+                    error_items.append({
+                        "phrase": corrected,
+                        "category": "speaking_error",
+                    })
+
+            # Merge errors (resets weak to False for existing items)
+            if error_items:
+                try:
+                    merge_learned(LEARNED_EN_PHRASE_FILE, error_items, "phrase")
+                    # Mark each as weak (ponytail: order matters — merge first resets weak)
+                    for error in errors:
+                        corrected = error.get("corrected", "").strip()
+                        if corrected:
+                            mark_weak(LEARNED_EN_PHRASE_FILE, "phrase", corrected)
+                except Exception as e:
+                    print(f"⚠️ 약한 표현 병합 실패 (계속): {e}")
+
+    # Record to history files
+    try:
+        # Session metadata
+        session_record = {
+            "date": session_date,
+            "mode": session.get("mode", "roleplay"),
+            "scenario_ko": session.get("scenario_ko", ""),
+            "turn_count": turn_count,
+            "target_expressions": session.get("target_expressions", []),
+            "feedback_sent": bool(analysis),
+        }
+        add_history(SPEAKING_SESSIONS_FILE, session_record, limit=250)
+
+        # Detailed submissions with analysis
+        add_history(SPEAKING_SUBMISSIONS_FILE, submission_record, limit=250)
+    except Exception as e:
+        print(f"⚠️ 이력 기록 실패 (계속): {e}")
+
+    status_suffix = " (분석 완료)" if analysis else " (분석 실패, 전사 기록됨)"
     return (
-        {"turns": turns, "date": session.get("date"), "scenario_ko": session.get("scenario_ko")},
-        f"✅ 세션 종료! {turn_count}턴 진행했습니다.",
+        {"turns": turns, "date": session_date, "scenario_ko": session.get("scenario_ko")},
+        f"✅ 세션 종료! {turn_count}턴 진행했습니다.{status_suffix}",
     )
