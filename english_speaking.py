@@ -31,6 +31,38 @@ PROJECT_DIR = Path(__file__).resolve().parent
 VOICE_ASSISTANT = os.getenv("EN_SPEAKING_VOICE", "en-US-Neural2-D")
 
 
+def _transcribe_audio(audio_path: str, duration_sec: float) -> tuple:
+    """
+    Transcribe audio file and log cost.
+    Returns: (user_text: str, error_message: str or None)
+      - If successful: (text, None)
+      - If failed: ("", error_message)
+    """
+    try:
+        from openai import OpenAI
+        client = OpenAI()
+
+        with open(audio_path, "rb") as f:
+            transcript = client.audio.transcriptions.create(
+                model="gpt-4o-mini-transcribe",
+                file=f,
+            )
+        user_text = transcript.text or ""
+
+        # Log STT cost
+        cost = (duration_sec / 60.0) * 0.003  # ~$0.003 per minute
+        log_provider_cost(
+            "en",
+            "openai_stt",
+            cost,
+            model="gpt-4o-mini-transcribe",
+            audio_sec=duration_sec,
+        )
+        return user_text, None
+    except Exception as e:
+        return "", f"❌ 음성 변환 실패: {e}"
+
+
 def _normalize_text(text: str) -> str:
     """Normalize text for comparison: lowercase, remove punctuation, normalize whitespace."""
     text = text.lower()
@@ -43,9 +75,12 @@ def _normalize_text(text: str) -> str:
 
 def _get_diff_report(model_text: str, learner_text: str) -> dict:
     """
-    Compute word-level diff and return report.
-    Returns:
-        dict with keys: missing_words, misread_words, status_message
+    Compute word-level diff and return report with 3 categories:
+    - missing_words: words in model but not in learner
+    - misread_words: words in learner but not in model
+    - word_order: words present but in different order (same set, different sequence)
+
+    Returns: dict with keys: missing_words, misread_words, word_order, status_message
     """
     model_norm = _normalize_text(model_text)
     learner_norm = _normalize_text(learner_text)
@@ -53,36 +88,55 @@ def _get_diff_report(model_text: str, learner_text: str) -> dict:
     model_words = model_norm.split()
     learner_words = learner_norm.split()
 
-    # Use SequenceMatcher to find matching blocks
-    matcher = difflib.SequenceMatcher(None, model_words, learner_words)
-    matching_blocks = matcher.get_matching_blocks()
+    # Check overall word sets
+    model_set = set(model_words)
+    learner_set = set(learner_words)
 
-    # Track which positions are matched
-    model_matched = set()
-    learner_matched = set()
-    for block in matching_blocks:
-        for i in range(block.size):
-            model_matched.add(block.a + i)
-            learner_matched.add(block.b + i)
+    missing_words = []
+    misread_words = []
+    word_order = []
 
-    # Extract missing and misread
-    missing_words = [model_words[i] for i in range(len(model_words)) if i not in model_matched]
-    misread_words = [learner_words[i] for i in range(len(learner_words)) if i not in learner_matched]
+    # ponytail: simple heuristic — if sets match but sequence differs, it's word order
+    if model_set == learner_set and model_words != learner_words:
+        word_order = list(model_set)
+    else:
+        # Use SequenceMatcher for detailed diff
+        matcher = difflib.SequenceMatcher(None, model_words, learner_words)
+        opcodes = matcher.get_opcodes()
+
+        for tag, i1, i2, j1, j2 in opcodes:
+            if tag == "delete":
+                missing_words.extend(model_words[i1:i2])
+            elif tag == "insert":
+                misread_words.extend(learner_words[j1:j2])
+            elif tag == "replace":
+                model_seq = set(model_words[i1:i2])
+                learner_seq = set(learner_words[j1:j2])
+                for word in model_seq:
+                    if word not in learner_seq:
+                        missing_words.append(word)
+                for word in learner_seq:
+                    if word not in model_seq:
+                        misread_words.append(word)
 
     # Generate message
-    if not missing_words and not misread_words:
+    parts = []
+    if missing_words:
+        parts.append(f"누락: {', '.join(missing_words[:5])}")
+    if misread_words:
+        parts.append(f"오독: {', '.join(misread_words[:5])}")
+    if word_order:
+        parts.append(f"어순: {', '.join(word_order[:5])}")
+
+    if not parts:
         status = "✅ 완벽합니다!"
     else:
-        parts = []
-        if missing_words:
-            parts.append(f"누락: {', '.join(missing_words[:5])}")
-        if misread_words:
-            parts.append(f"오독: {', '.join(misread_words[:5])}")
-        status = " | ".join(parts) if parts else "✅ 좋습니다!"
+        status = " | ".join(parts)
 
     return {
         "missing_words": missing_words,
         "misread_words": misread_words,
+        "word_order": word_order,
         "status_message": status,
     }
 
@@ -276,9 +330,6 @@ def handle_voice_message(audio_path: str, duration_sec: float):
     else:
         return _handle_roleplay_voice(audio_path, duration_sec)
 
-    # This line should never be reached due to branching above
-    return False, "", None, "세션 모드를 인식하지 못했습니다."
-
 
 def _handle_roleplay_voice(audio_path: str, duration_sec: float):
     """Handle roleplay mode voice message."""
@@ -288,29 +339,10 @@ def _handle_roleplay_voice(audio_path: str, duration_sec: float):
     if not session:
         return False, "", None, "진행 중인 말하기 세션이 없습니다."
 
-    # Transcribe audio to text
-    try:
-        from openai import OpenAI
-        client = OpenAI()
-
-        with open(audio_path, "rb") as f:
-            transcript = client.audio.transcriptions.create(
-                model="gpt-4o-mini-transcribe",
-                file=f,
-            )
-        user_text = transcript.text or ""
-
-        # Log STT cost
-        cost = (duration_sec / 60.0) * 0.003  # ~$0.003 per minute
-        log_provider_cost(
-            "en",
-            "openai_stt",
-            cost,
-            model="gpt-4o-mini-transcribe",
-            audio_sec=duration_sec,
-        )
-    except Exception as e:
-        return False, "", None, f"❌ 음성 변환 실패: {e}"
+    # Transcribe audio
+    user_text, error = _transcribe_audio(audio_path, duration_sec)
+    if error:
+        return False, "", None, error
 
     if not user_text:
         return False, "", None, "음성을 인식하지 못했습니다. 다시 시도해주세요."
@@ -402,28 +434,9 @@ def _handle_shadowing_voice(audio_path: str, duration_sec: float):
         return False, "", None, "진행 중인 말하기 세션이 없습니다."
 
     # Transcribe audio
-    try:
-        from openai import OpenAI
-        client = OpenAI()
-
-        with open(audio_path, "rb") as f:
-            transcript = client.audio.transcriptions.create(
-                model="gpt-4o-mini-transcribe",
-                file=f,
-            )
-        user_text = transcript.text or ""
-
-        # Log STT cost
-        cost = (duration_sec / 60.0) * 0.003
-        log_provider_cost(
-            "en",
-            "openai_stt",
-            cost,
-            model="gpt-4o-mini-transcribe",
-            audio_sec=duration_sec,
-        )
-    except Exception as e:
-        return False, "", None, f"❌ 음성 변환 실패: {e}"
+    user_text, error = _transcribe_audio(audio_path, duration_sec)
+    if error:
+        return False, "", None, error
 
     if not user_text:
         return False, "", None, "음성을 인식하지 못했습니다. 다시 시도해주세요."

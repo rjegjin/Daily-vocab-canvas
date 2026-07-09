@@ -632,7 +632,8 @@ def test_get_diff_report_perfect_match():
 
     assert report["missing_words"] == []
     assert report["misread_words"] == []
-    assert "완벽" in report["status_message"]
+    assert report["word_order"] == []
+    assert report["status_message"] == "✅ 완벽합니다!"
 
 
 def test_get_diff_report_missing_words():
@@ -642,7 +643,7 @@ def test_get_diff_report_missing_words():
     report = _get_diff_report("Hello beautiful world", "Hello world")
 
     assert "beautiful" in report["missing_words"]
-    assert "누락" in report["status_message"]
+    assert "누락: beautiful" in report["status_message"]
 
 
 def test_get_diff_report_misread_words():
@@ -652,7 +653,17 @@ def test_get_diff_report_misread_words():
     report = _get_diff_report("Hello world", "Hello beautiful world")
 
     assert "beautiful" in report["misread_words"]
-    assert "오독" in report["status_message"]
+    assert "오독: beautiful" in report["status_message"]
+
+
+def test_get_diff_report_word_order():
+    """Test diff report detects word order deviation."""
+    from english_speaking import _get_diff_report
+
+    report = _get_diff_report("Hello beautiful world", "beautiful Hello world")
+
+    assert "hello" in report["word_order"] or "beautiful" in report["word_order"]
+    assert "어순:" in report["status_message"]
 
 
 def test_get_diff_report_normalization():
@@ -663,11 +674,13 @@ def test_get_diff_report_normalization():
     report = _get_diff_report("Hello World", "hello world")
     assert report["missing_words"] == []
     assert report["misread_words"] == []
+    assert report["word_order"] == []
 
     # Punctuation should be ignored
     report = _get_diff_report("Hello, world!", "Hello world")
     assert report["missing_words"] == []
     assert report["misread_words"] == []
+    assert report["word_order"] == []
 
 
 def test_handle_shadowing_voice_perfect_match():
@@ -710,7 +723,7 @@ def test_handle_shadowing_voice_perfect_match():
 
             assert success is True
             assert user_text == "Hello, where is my luggage?"
-            assert "완벽" in message or "좋습니다" in message or "✅" in message
+            assert message == "✅ 완벽합니다!"
 
             # Verify session advanced to next sentence
             from english_core import get_state
