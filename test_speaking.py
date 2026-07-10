@@ -25,7 +25,6 @@ def test_start_speaking_session_success():
 
     with patch("english_speaking.generate_dialogue") as mock_gen, \
          patch("english_speaking.generate_english_tts_voice") as mock_tts, \
-         patch("english_speaking.send_message") as mock_send, \
          patch("english_speaking.generate_json_openai") as mock_openai:
 
         mock_gen.return_value = {
@@ -36,17 +35,20 @@ def test_start_speaking_session_success():
         mock_openai.return_value = {"text": "Hello! I can help you find your luggage."}
         mock_tts.return_value = None  # No actual TTS file
 
-        success, message = start_speaking_session()
+        success, bot_utterance, audio_path, guide_message = start_speaking_session()
 
         assert success is True
-        assert "시작" in message or "session" in message.lower()
+        assert bot_utterance == "Hello! I can help you find your luggage."
+        assert audio_path is None  # TTS failed
+        assert "상황" in guide_message or "답해" in guide_message
 
-        # Verify state was saved
+        # Verify state was saved with lang field
         from english_core import get_state
         state = get_state()
         assert "speaking_session" in state
         session = state["speaking_session"]
         assert session["mode"] == "roleplay"
+        assert session["lang"] == "en"
         assert len(session["turns"]) == 1
         assert session["turns"][0]["role"] == "assistant"
 
@@ -65,10 +67,10 @@ def test_start_speaking_session_already_active():
     }
     write_json(ENGLISH_STATE_FILE, state)
 
-    success, message = start_speaking_session()
+    success, bot_utterance, audio_path, guide_message = start_speaking_session()
 
     assert success is False
-    assert "이미 진행 중인" in message or "already" in message.lower()
+    assert "이미 진행 중인" in guide_message or "already" in guide_message.lower()
 
 
 def test_start_speaking_session_generate_dialogue_returns_none():
@@ -82,11 +84,11 @@ def test_start_speaking_session_generate_dialogue_returns_none():
     with patch("english_speaking.generate_dialogue") as mock_gen:
         mock_gen.return_value = None
 
-        success, message = start_speaking_session()
+        success, bot_utterance, audio_path, guide_message = start_speaking_session()
 
         assert success is False
-        assert "생성 실패" in message or "실패" in message
-        assert "대사" in message
+        assert "생성 실패" in guide_message or "실패" in guide_message
+        assert "대사" in guide_message
 
         # Verify session was NOT created
         from english_core import get_state
@@ -105,11 +107,11 @@ def test_start_speaking_session_generate_dialogue_raises():
     with patch("english_speaking.generate_dialogue") as mock_gen:
         mock_gen.side_effect = RuntimeError("API 연결 오류")
 
-        success, message = start_speaking_session()
+        success, bot_utterance, audio_path, guide_message = start_speaking_session()
 
         assert success is False
-        assert "생성 실패" in message or "실패" in message
-        assert "API 연결 오류" in message
+        assert "생성 실패" in guide_message or "실패" in guide_message
+        assert "API 연결 오류" in guide_message
 
         # Verify session was NOT created
         from english_core import get_state
@@ -404,8 +406,7 @@ def test_finalize_session_with_analysis_and_weak_merge():
     write_json(SPEAKING_SESSIONS_FILE, [])
     write_json(SPEAKING_SUBMISSIONS_FILE, [])
 
-    with patch("english_speaking.analyze_session") as mock_analyze, \
-         patch("english_speaking.send_message") as mock_send:
+    with patch("english_speaking.analyze_session") as mock_analyze:
 
         mock_analyze.return_value = {
             "errors": [
@@ -427,11 +428,11 @@ def test_finalize_session_with_analysis_and_weak_merge():
             "next_step": "Lost luggage 상황에서 표현을 더 연습해보세요",
         }
 
-        turns_data, message = finalize_session()
+        turns_data, feedback_message = finalize_session()
 
         assert turns_data is not None
-        assert "분석 완료" in message
         assert len(turns_data["turns"]) == 4
+        assert "표현 교정" in feedback_message or "피드백" in feedback_message or "말하기" in feedback_message
 
         # Verify session was cleared
         from english_core import get_state
@@ -491,16 +492,14 @@ def test_finalize_session_analysis_failure_preserves_transcript():
     write_json(ENGLISH_STATE_FILE, state)
     write_json(SPEAKING_SUBMISSIONS_FILE, [])
 
-    with patch("english_speaking.analyze_session") as mock_analyze, \
-         patch("english_speaking.send_message"):
+    with patch("english_speaking.analyze_session") as mock_analyze:
 
         mock_analyze.return_value = None  # Simulate analysis failure
 
-        turns_data, message = finalize_session()
+        turns_data, feedback_message = finalize_session()
 
         assert turns_data is not None
-        assert "분석 실패" in message
-        assert "전사 기록됨" in message
+        assert "종료" in feedback_message or "세션" in feedback_message
 
         # Verify transcript was preserved
         submissions = read_json(SPEAKING_SUBMISSIONS_FILE, [])
@@ -516,9 +515,12 @@ def test_weak_merge_order():
     from english_core import (
         ENGLISH_STATE_FILE,
         LEARNED_EN_PHRASE_FILE,
+        TODAY,
         write_json,
         read_json,
     )
+
+    today = TODAY()
 
     # Pre-populate learned phrases with an existing weak item
     existing_phrases = [
@@ -536,7 +538,7 @@ def test_weak_merge_order():
     # Setup session with error containing the same phrase
     state = {
         "speaking_session": {
-            "date": "2026-07-09",
+            "date": today,
             "mode": "roleplay",
             "scenario_ko": "일상 대화",
             "target_expressions": [],
@@ -550,8 +552,7 @@ def test_weak_merge_order():
     }
     write_json(ENGLISH_STATE_FILE, state)
 
-    with patch("english_speaking.analyze_session") as mock_analyze, \
-         patch("english_speaking.send_message"):
+    with patch("english_speaking.analyze_session") as mock_analyze:
 
         mock_analyze.return_value = {
             "errors": [
@@ -570,7 +571,7 @@ def test_weak_merge_order():
             "next_step": "계속 연습하세요",
         }
 
-        finalize_session()
+        _, feedback_msg = finalize_session()
 
         # Verify weak marking: after merge, weak should be reset to False
         # Then mark_weak should set it back to True
@@ -581,18 +582,20 @@ def test_weak_merge_order():
         )
         assert beautiful_item is not None
         assert beautiful_item["weak"] is True  # Should be marked weak
-        assert beautiful_item["weak_date"] == "2026-07-09"  # Should have today's date
+        assert beautiful_item["weak_date"] == today  # Should have today's date
 
 
 def test_start_shadowing_session_success():
     """Test successful shadowing session startup."""
     from english_speaking import start_shadowing_session
-    from english_core import ENGLISH_STATE_FILE, write_json
+    from english_core import ENGLISH_STATE_FILE, TODAY, write_json
+
+    today = TODAY()
 
     # Clear state and set up latest dialogue
     state = {
         "latest_en_dialogue": {
-            "date": "2026-07-09",
+            "date": today,
             "item": {
                 "scenario_ko": "공항에서 짐을 찾는 상황",
                 "target_expressions": ["Where is my luggage?"],
@@ -606,20 +609,21 @@ def test_start_shadowing_session_success():
     }
     write_json(ENGLISH_STATE_FILE, state)
 
-    with patch("english_speaking.send_message") as mock_send, \
-         patch("english_speaking.check_budget_exit"):
+    with patch("english_speaking.check_budget_exit"):
 
-        success, message = start_shadowing_session()
+        success, guide_message = start_shadowing_session()
 
         assert success is True
-        assert "쉐도잉" in message
+        assert "쉐도잉" in guide_message
+        assert "Hello, where is my luggage?" in guide_message
 
-        # Verify state was saved
+        # Verify state was saved with lang field
         from english_core import get_state
         state = get_state()
         assert "speaking_session" in state
         session = state["speaking_session"]
         assert session["mode"] == "shadowing"
+        assert session["lang"] == "en"
         assert session["current_index"] == 0
         assert len(session["sentences"]) == 2  # Two role A sentences
         assert session["sentences"][0] == "Hello, where is my luggage?"
@@ -664,10 +668,10 @@ def test_start_shadowing_with_active_roleplay():
     write_json(ENGLISH_STATE_FILE, state)
 
     with patch("english_speaking.check_budget_exit"):
-        success, message = start_shadowing_session()
+        success, guide_message = start_shadowing_session()
 
         assert success is False
-        assert "이미 진행 중인" in message
+        assert "이미 진행 중인" in guide_message
 
 
 def test_get_diff_report_perfect_match():
@@ -751,8 +755,7 @@ def test_handle_shadowing_voice_perfect_match():
 
     with patch("openai.OpenAI") as mock_openai_class, \
          patch("english_speaking.check_budget_exit"), \
-         patch("english_speaking.log_provider_cost"), \
-         patch("english_speaking.send_message") as mock_send:
+         patch("english_speaking.log_provider_cost"):
 
         mock_client = MagicMock()
         mock_openai_class.return_value = mock_client
@@ -769,7 +772,8 @@ def test_handle_shadowing_voice_perfect_match():
 
             assert success is True
             assert user_text == "Hello, where is my luggage?"
-            assert message == "✅ 완벽합니다!"
+            assert "완벽" in message
+            assert "다음 문장" in message or "Thank you very much" in message
 
             # Verify session advanced to next sentence
             from english_core import get_state

@@ -385,20 +385,22 @@ def _send_more_lang_dialogue(lang: str):
     return bool(send_more_dialogue())
 
 def _start_speaking_session():
-    success, message = start_speaking_session()
-    return message
+    # Returns (success, bot_utterance, audio_path, guide_message)
+    success, bot_utterance, audio_path, guide_message = start_speaking_session()
+    return success, bot_utterance, audio_path, guide_message
 
 def _start_shadowing_session():
-    success, message = start_shadowing_session()
-    return message
+    # Returns (success, guide_message)
+    success, guide_message = start_shadowing_session()
+    return success, guide_message
 
 def _handle_voice_message(audio_path: str, duration_sec: float):
     success, user_text, audio_path_response, message = handle_voice_message(audio_path, duration_sec)
     return success, user_text, audio_path_response, message
 
 def _end_speaking_session():
-    turns_data, message = finalize_session()
-    return message
+    turns_data, feedback_message = finalize_session()
+    return feedback_message
 
 # -------------------------------------------------------------------
 # 핸들러
@@ -504,20 +506,28 @@ async def handle_voice(update: Update, context: ContextTypes.DEFAULT_TYPE):
     duration_sec = voice.duration or 0
     file_path = None
     try:
-        file = await voice.get_file()
+        # Download voice with retry logic (1 retry)
         file_path = os.path.join(PROJECT_DIR, f"voice_{int(datetime.now().timestamp())}.ogg")
-        await file.download_to_drive(file_path)
+        try:
+            file = await voice.get_file()
+            await file.download_to_drive(file_path)
+        except Exception as download_error:
+            # Retry once
+            try:
+                file = await voice.get_file()
+                await file.download_to_drive(file_path)
+            except Exception as retry_error:
+                await update.message.reply_text("❌ 음성 다운로드 실패. 텍스트로 답장해 주세요.")
+                return
 
         success, user_text, audio_path_response, message = await asyncio.to_thread(
             _handle_voice_message, file_path, duration_sec
         )
 
         if success:
-            from english_core import send_audio
             await update.message.reply_text(f"👤 당신: {user_text}\n\n🤖 봇: {message}")
             if audio_path_response and os.path.exists(audio_path_response):
-                await update.message.reply_text("🎧 봇 발화를 들으세요...")
-                await asyncio.to_thread(send_audio, audio_path_response, caption="🎤 봇 응답")
+                await update.message.reply_voice(voice=open(audio_path_response, 'rb'), caption="🎤 봇 응답")
                 os.remove(audio_path_response)
         else:
             await update.message.reply_text(message)
@@ -574,14 +584,24 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         elif kind == "dialogue" and action == "ok":
             await query.message.reply_text("✅ 자신 있음으로 기록했습니다.")
         elif kind == "speaking" and action == "start":
-            msg = await asyncio.to_thread(_start_speaking_session)
-            await query.message.reply_text(msg)
+            success, bot_utterance, audio_path, guide_message = await asyncio.to_thread(_start_speaking_session)
+            if success:
+                # Send guide message first
+                await query.message.reply_text(guide_message, parse_mode="Markdown")
+                # Send TTS audio if available
+                if audio_path and os.path.exists(audio_path):
+                    await query.message.reply_voice(voice=open(audio_path, 'rb'), caption="🎤 봇 발화 — 답해주세요")
+                    os.remove(audio_path)
+                # Send bot utterance text
+                await query.message.reply_text(f"🤖 봇: {bot_utterance}")
+            else:
+                await query.message.reply_text(guide_message)
         elif kind == "speaking" and action == "shadow":
-            msg = await asyncio.to_thread(_start_shadowing_session)
-            await query.message.reply_text(msg)
+            success, guide_message = await asyncio.to_thread(_start_shadowing_session)
+            await query.message.reply_text(guide_message)
         elif kind == "speaking" and action == "end":
-            msg = await asyncio.to_thread(_end_speaking_session)
-            await query.message.reply_text(msg)
+            feedback_message = await asyncio.to_thread(_end_speaking_session)
+            await query.message.reply_text(feedback_message, parse_mode="Markdown")
     elif data.startswith(("ja_rules:", "zh_tones:")):
         parts = data.split(":")
         kind = parts[0]

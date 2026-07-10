@@ -1,5 +1,16 @@
 """
 English roleplay speaking session with TTS and STT.
+
+## Return Contracts
+
+All public functions return-only (no sending). Bot handlers send via context.bot.
+
+- start_speaking_session() → (success: bool, bot_utterance_text: str, audio_path: str|None, message: str)
+- start_shadowing_session() → (success: bool, message: str)
+- handle_voice_message(audio_path, duration) → (success: bool, user_text: str, audio_path: str|None, bot_response: str)
+- finalize_session() → (turns_data: dict|None, feedback_message: str)
+
+All side effects (state updates, history recording, weak merge) happen inside these functions.
 """
 import difflib
 import json
@@ -22,8 +33,6 @@ from english_core import (
     mark_weak,
     merge_learned,
     read_json,
-    send_audio,
-    send_message,
     write_json,
 )
 from english_dialogue import generate_dialogue
@@ -152,11 +161,16 @@ def start_speaking_session():
     """
     Initialize a speaking session.
     Load today's dialogue or generate a new one.
-    Send bot's first utterance.
-    Returns: (success: bool, message: str)
+    Generate bot's first utterance and TTS.
+
+    Returns: (success, bot_utterance_text, audio_path, guide_message)
+      - success: bool, True if session created successfully
+      - bot_utterance_text: first bot utterance (or "" on failure)
+      - audio_path: path to TTS audio file (or None on TTS failure)
+      - guide_message: status/error message
     """
     if _has_active_session():
-        return False, "이미 진행 중인 말하기 세션이 있습니다. 완료 후 다시 시도해주세요."
+        return False, "", None, "이미 진행 중인 말하기 세션이 있습니다. 완료 후 다시 시도해주세요."
 
     check_budget_exit("en")
 
@@ -175,11 +189,11 @@ def start_speaking_session():
         try:
             item = generate_dialogue()
             if not item or not isinstance(item, dict):
-                return False, "❌ 회화 생성 실패: 대사를 생성할 수 없습니다."
+                return False, "", None, "❌ 회화 생성 실패: 대사를 생성할 수 없습니다."
             state["latest_en_dialogue"] = {"date": today, "item": item}
             write_json(ENGLISH_STATE_FILE, state)
         except Exception as e:
-            return False, f"❌ 회화 생성 실패: {e}"
+            return False, "", None, f"❌ 회화 생성 실패: {e}"
 
     # Extract scenario info
     scenario_ko = item.get("scenario_ko", "")
@@ -195,6 +209,7 @@ def start_speaking_session():
         "turns": [],
         "max_turns": 8,
         "started_at": datetime.now().strftime("%H:%M:%S"),
+        "lang": "en",
     }
 
     # Generate bot's first utterance
@@ -219,7 +234,7 @@ Keep it to 1-2 sentences.
             bot_utterance = bot_utterance.get("text", str(bot_utterance))
         bot_utterance = str(bot_utterance).strip()
     except Exception as e:
-        return False, f"❌ 첫 발화 생성 실패: {e}"
+        return False, "", None, f"❌ 첫 발화 생성 실패: {e}"
 
     # Add first turn
     speaking_session["turns"].append({
@@ -231,33 +246,29 @@ Keep it to 1-2 sentences.
     state["speaking_session"] = speaking_session
     write_json(ENGLISH_STATE_FILE, state)
 
-    # Generate TTS and send
+    # Generate TTS (return audio path to handler for sending)
+    audio_path = None
     try:
         audio_path = generate_english_tts_voice(
             bot_utterance,
             "speaking_session_bot.mp3",
             VOICE_ASSISTANT,
         )
-        if audio_path and os.path.exists(audio_path):
-            send_audio(audio_path, caption="🎤 봇 발화 — 답해주세요")
-            os.remove(audio_path)
     except Exception as e:
-        print(f"⚠️ TTS 발송 실패 (계속): {e}")
+        print(f"⚠️ TTS 생성 실패 (계속): {e}")
 
-    send_message(
-        f"🎬 *상황:* {scenario_ko}\n\n"
-        f"*봇:* {bot_utterance}\n\n"
-        f"💬 음성 메시지로 답해주세요!"
-    )
-
-    return True, f"✅ 말하기 세션 시작! 음성 메시지로 답해주세요."
+    guide_msg = f"🎬 *상황:* {scenario_ko}\n\n💬 음성 메시지로 답해주세요!"
+    return True, bot_utterance, audio_path, guide_msg
 
 
 def start_shadowing_session():
     """
     Initialize a shadowing (shadowing read) session.
     Load today's dialogue, extract model sentences (role A), and start with first one.
-    Returns: (success: bool, message: str)
+
+    Returns: (success: bool, guide_message: str)
+      - success: bool, True if session created successfully
+      - guide_message: message with first sentence to read (or error message)
     """
     if _has_active_session():
         return False, "이미 진행 중인 말하기 세션이 있습니다. 완료 후 다시 시도해주세요."
@@ -286,6 +297,7 @@ def start_shadowing_session():
         return False, "따라 읽을 모범 문장이 없습니다."
 
     # Create shadowing session
+    first_sentence = sentences[0]
     shadowing_session = {
         "date": today,
         "mode": "shadowing",
@@ -295,17 +307,15 @@ def start_shadowing_session():
         "current_index": 0,
         "turns": [],
         "started_at": datetime.now().strftime("%H:%M:%S"),
+        "lang": "en",
     }
-
-    # Send first sentence
-    first_sentence = sentences[0]
-    send_message(f"🎤 *쉐도잉 시작* 다음 문장을 따라 읽으세요:\n\n\"{first_sentence}\"")
 
     # Save session state
     state["speaking_session"] = shadowing_session
     write_json(ENGLISH_STATE_FILE, state)
 
-    return True, f"✅ 쉐도잉 세션 시작! 문장을 따라 읽고 음성 메시지를 보내세요."
+    guide_msg = f"🎤 *쉐도잉 시작* 다음 문장을 따라 읽으세요:\n\n\"{first_sentence}\""
+    return True, guide_msg
 
 
 def handle_voice_message(audio_path: str, duration_sec: float):
@@ -526,11 +536,11 @@ def _handle_shadowing_voice(audio_path: str, duration_sec: float):
         state["speaking_session"] = session
         write_json(ENGLISH_STATE_FILE, state)
 
-        # Send next sentence for shadowing
-        send_message(f"📍 다음 문장을 따라 읽으세요:\n\n\"{next_sentence}\"")
-
         feedback_msg = diff_report["status_message"]
-        return True, user_text, None, feedback_msg
+        next_sentence_msg = f"📍 다음 문장을 따라 읽으세요:\n\n\"{next_sentence}\""
+        # Return both feedback and next sentence in one message
+        combined_msg = f"{feedback_msg}\n\n{next_sentence_msg}"
+        return True, user_text, None, combined_msg
 
 
 def analyze_session(session: dict):
@@ -722,11 +732,12 @@ def finalize_session():
     """
     End the current speaking session.
     Full pipeline: analyze → format feedback → weak merge → history recording.
+    All side effects happen here; feedback is returned, not sent.
 
     Returns:
-        (turns_data, message) tuple
+        (turns_data, feedback_message) tuple
         - turns_data: dict with turns, date, scenario_ko, or None if no session
-        - message: status message
+        - feedback_message: formatted feedback string (or status message if no analysis)
 
     Guarantees:
         - Session state is always removed (even if analysis fails)
@@ -758,16 +769,17 @@ def finalize_session():
     if session.get("mode") == "roleplay":
         analysis = analyze_session(session)
 
-    # If analysis succeeded, add it to submission record and send feedback
+    # If analysis succeeded, add it to submission record and generate feedback
+    feedback_text = ""
     if analysis:
         submission_record["analysis"] = analysis
 
-        # Send feedback card
+        # Format feedback card
         try:
-            feedback_message = format_speaking_feedback(analysis)
-            send_message(feedback_message)
+            feedback_text = format_speaking_feedback(analysis)
         except Exception as e:
-            print(f"⚠️ 피드백 전송 실패 (계속): {e}")
+            print(f"⚠️ 피드백 포매팅 실패 (계속): {e}")
+            feedback_text = f"✅ 세션 종료! {turn_count}턴 진행했습니다."
 
         # Extract errors and merge to learned phrases with weak marking
         errors = analysis.get("errors", [])
@@ -793,6 +805,9 @@ def finalize_session():
                             mark_weak(LEARNED_EN_PHRASE_FILE, "phrase", corrected)
                 except Exception as e:
                     print(f"⚠️ 약한 표현 병합 실패 (계속): {e}")
+    else:
+        # No analysis: return status message
+        feedback_text = f"✅ 세션 종료! {turn_count}턴 진행했습니다."
 
     # Record to history files
     try:
@@ -834,8 +849,7 @@ def finalize_session():
     except Exception as e:
         print(f"⚠️ 이력 기록 실패 (계속): {e}")
 
-    status_suffix = " (분석 완료)" if analysis else " (분석 실패, 전사 기록됨)"
     return (
         {"turns": turns, "date": session_date, "scenario_ko": session.get("scenario_ko")},
-        f"✅ 세션 종료! {turn_count}턴 진행했습니다.{status_suffix}",
+        feedback_text,
     )
