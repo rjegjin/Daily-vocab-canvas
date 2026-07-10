@@ -462,5 +462,89 @@
       "txt_in": 33,
       "txt_out": 30
     }
+  },
+  "2026-07-06": {
+    "tts": {
+      "chars": 949,
+      "cost_usd": 0.0
+    },
+    "en": {
+      "img_count": 0,
+      "txt_in": 401,
+      "txt_out": 1025,
+      "cost_usd": 0.0016
+    },
+    "_daily_total_usd": 0.0034,
+    "ja": {
+      "img_count": 0,
+      "txt_in": 178,
+      "txt_out": 526,
+      "cost_usd": 0.0008
+    },
+    "zh": {
+      "img_count": 0,
+      "txt_in": 204,
+      "txt_out": 621,
+      "cost_usd": 0.001
+    }
+  },
+  "2026-07-07": {
+    "tts": {
+      "chars": 912,
+      "cost_usd": 0.0
+    },
+    "en": {
+      "img_count": 0,
+      "txt_in": 423,
+      "txt_out": 1025,
+      "cost_usd": 0.0016
+    },
+    "_daily_total_usd": 0.0034,
+    "ja": {
+      "img_count": 0,
+      "txt_in": 178,
+      "txt_out": 523,
+      "cost_usd": 0.0008
+    },
+    "zh": {
+      "img_count": 0,
+      "txt_in": 205,
+      "txt_out": 613,
+      "cost_usd": 0.001
+    }
+  },
+  "2026-07-08": {
+    "tts": {
+      "chars": 651,
+      "cost_usd": 0.0
+    },
+    "en": {
+      "img_count": 0,
+      "txt_in": 457,
+      "txt_out": 1000,
+      "cost_usd": 0.0016
+    },
+    "_daily_total_usd": 0.0034,
+    "ja": {
+      "img_count": 0,
+      "txt_in": 178,
+      "txt_out": 575,
+      "cost_usd": 0.0009
+    },
+    "zh": {
+      "img_count": 0,
+      "txt_in": 204,
+      "txt_out": 589,
+      "cost_usd": 0.0009
+    }
+  },
+  "2026-07-09": {
+    "en": {
+      "img_count": 0,
+      "txt_in": 165,
+      "txt_out": 648,
+      "cost_usd": 0.001
+    },
+    "_daily_total_usd": 0.001
   }
 }

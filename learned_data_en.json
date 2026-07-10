@@ -1,0 +1,1402 @@
+[
+  {
+    "word": "resilient",
+    "date_added": "2026-06-08",
+    "category": "concept",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "adjective",
+    "register": "neutral"
+  },
+  {
+    "word": "blossom",
+    "date_added": "2026-06-08",
+    "category": "nature",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "verb",
+    "register": "neutral"
+  },
+  {
+    "word": "hinder",
+    "date_added": "2026-06-08",
+    "category": "action",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "verb",
+    "register": "formal"
+  },
+  {
+    "word": "frustration",
+    "date_added": "2026-06-08",
+    "category": "emotion",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "noun",
+    "register": "neutral"
+  },
+  {
+    "word": "spacious",
+    "date_added": "2026-06-08",
+    "category": "place",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "adjective",
+    "register": "neutral"
+  },
+  {
+    "word": "drowsy",
+    "date_added": "2026-06-08",
+    "category": "body",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "adjective",
+    "register": "neutral"
+  },
+  {
+    "word": "utensil",
+    "date_added": "2026-06-08",
+    "category": "object",
+    "seen_count": 2,
+    "weak": false,
+    "weak_date": null,
+    "pos": "noun",
+    "register": "neutral"
+  },
+  {
+    "word": "appetizing",
+    "date_added": "2026-06-08",
+    "category": "food",
+    "seen_count": 2,
+    "weak": false,
+    "weak_date": null,
+    "pos": "adjective",
+    "register": "neutral"
+  },
+  {
+    "word": "promptly",
+    "date_added": "2026-06-08",
+    "category": "time",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "adverb",
+    "register": "formal"
+  },
+  {
+    "word": "mitigate",
+    "date_added": "2026-06-08",
+    "category": "action",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "verb",
+    "register": "formal"
+  },
+  {
+    "word": "scrutiny",
+    "date_added": "2026-06-08",
+    "category": "concept",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "noun",
+    "register": "formal"
+  },
+  {
+    "word": "meticulous",
+    "date_added": "2026-06-08",
+    "category": "concept",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "adjective",
+    "register": "neutral"
+  },
+  {
+    "word": "thrive",
+    "date_added": "2026-06-08",
+    "category": "nature",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "verb",
+    "register": "neutral"
+  },
+  {
+    "word": "exhilarating",
+    "date_added": "2026-06-08",
+    "category": "emotion",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "adjective",
+    "register": "neutral"
+  },
+  {
+    "word": "haphazard",
+    "date_added": "2026-06-08",
+    "category": "concept",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "adjective",
+    "register": "neutral"
+  },
+  {
+    "word": "stagnant",
+    "date_added": "2026-06-08",
+    "category": "place",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "adjective",
+    "register": "neutral"
+  },
+  {
+    "word": "devour",
+    "date_added": "2026-06-08",
+    "category": "food",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "verb",
+    "register": "neutral"
+  },
+  {
+    "word": "menacing",
+    "date_added": "2026-06-08",
+    "category": "nature",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "adjective",
+    "register": "neutral"
+  },
+  {
+    "word": "commit",
+    "date_added": "2026-06-09",
+    "category": "action",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "verb",
+    "register": "neutral"
+  },
+  {
+    "word": "generous",
+    "date_added": "2026-06-09",
+    "category": "emotion",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "adjective",
+    "register": "neutral"
+  },
+  {
+    "word": "observe",
+    "date_added": "2026-06-09",
+    "category": "action",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "verb",
+    "register": "neutral"
+  },
+  {
+    "word": "melt",
+    "date_added": "2026-06-09",
+    "category": "nature",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "verb",
+    "register": "neutral"
+  },
+  {
+    "word": "thoughtful",
+    "date_added": "2026-06-09",
+    "category": "emotion",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "adjective",
+    "register": "neutral"
+  },
+  {
+    "word": "discovery",
+    "date_added": "2026-06-09",
+    "category": "concept",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "noun",
+    "register": "neutral"
+  },
+  {
+    "word": "sprint",
+    "date_added": "2026-06-09",
+    "category": "action",
+    "seen_count": 2,
+    "weak": false,
+    "weak_date": null,
+    "pos": "verb",
+    "register": "neutral"
+  },
+  {
+    "word": "arrival",
+    "date_added": "2026-06-09",
+    "category": "place",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "noun",
+    "register": "neutral"
+  },
+  {
+    "word": "courageous",
+    "date_added": "2026-06-09",
+    "category": "emotion",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "adjective",
+    "register": "neutral"
+  },
+  {
+    "word": "adapt",
+    "date_added": "2026-06-09",
+    "category": "action",
+    "seen_count": 2,
+    "weak": false,
+    "weak_date": null,
+    "pos": "verb",
+    "register": "neutral"
+  },
+  {
+    "word": "dilemma",
+    "date_added": "2026-06-09",
+    "category": "concept",
+    "seen_count": 2,
+    "weak": false,
+    "weak_date": null,
+    "pos": "noun",
+    "register": "neutral"
+  },
+  {
+    "word": "vivid",
+    "date_added": "2026-06-09",
+    "category": "idea",
+    "seen_count": 3,
+    "weak": false,
+    "weak_date": null,
+    "pos": "adjective",
+    "register": "neutral"
+  },
+  {
+    "word": "perseverance",
+    "date_added": "2026-06-09",
+    "category": "emotion",
+    "seen_count": 4,
+    "weak": false,
+    "weak_date": null,
+    "pos": "noun",
+    "register": "neutral"
+  },
+  {
+    "word": "harvest",
+    "date_added": "2026-06-09",
+    "category": "nature",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "noun",
+    "register": "neutral"
+  },
+  {
+    "word": "generate",
+    "date_added": "2026-06-09",
+    "category": "action",
+    "seen_count": 2,
+    "weak": false,
+    "weak_date": null,
+    "pos": "verb",
+    "register": "neutral"
+  },
+  {
+    "word": "reflection",
+    "date_added": "2026-06-09",
+    "category": "concept",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "noun",
+    "register": "neutral"
+  },
+  {
+    "word": "robust",
+    "date_added": "2026-06-09",
+    "category": "object",
+    "seen_count": 3,
+    "weak": false,
+    "weak_date": null,
+    "pos": "adjective",
+    "register": "neutral"
+  },
+  {
+    "word": "anticipate",
+    "date_added": "2026-06-09",
+    "category": "concept",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "verb",
+    "register": "neutral"
+  },
+  {
+    "word": "harmony",
+    "date_added": "2026-06-10",
+    "category": "concept",
+    "seen_count": 2,
+    "weak": false,
+    "weak_date": null,
+    "pos": "noun",
+    "register": "neutral"
+  },
+  {
+    "word": "breeze",
+    "date_added": "2026-06-10",
+    "category": "nature",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "noun",
+    "register": "neutral"
+  },
+  {
+    "word": "nostalgia",
+    "date_added": "2026-06-10",
+    "category": "emotion",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "noun",
+    "register": "neutral"
+  },
+  {
+    "word": "counteract",
+    "date_added": "2026-06-10",
+    "category": "action",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "verb",
+    "register": "neutral"
+  },
+  {
+    "word": "structure",
+    "date_added": "2026-06-10",
+    "category": "object",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "noun",
+    "register": "neutral"
+  },
+  {
+    "word": "ambiguous",
+    "date_added": "2026-06-10",
+    "category": "concept",
+    "seen_count": 2,
+    "weak": false,
+    "weak_date": null,
+    "pos": "adjective",
+    "register": "neutral"
+  },
+  {
+    "word": "persistence",
+    "date_added": "2026-06-11",
+    "category": "concept",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "noun",
+    "register": "neutral"
+  },
+  {
+    "word": "courage",
+    "date_added": "2026-06-11",
+    "category": "emotion",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "noun",
+    "register": "neutral"
+  },
+  {
+    "word": "capture",
+    "date_added": "2026-06-11",
+    "category": "action",
+    "seen_count": 2,
+    "weak": false,
+    "weak_date": null,
+    "pos": "verb",
+    "register": "neutral"
+  },
+  {
+    "word": "fragile",
+    "date_added": "2026-06-11",
+    "category": "object",
+    "seen_count": 2,
+    "weak": false,
+    "weak_date": null,
+    "pos": "adjective",
+    "register": "neutral"
+  },
+  {
+    "word": "dusk",
+    "date_added": "2026-06-11",
+    "category": "time",
+    "seen_count": 2,
+    "weak": false,
+    "weak_date": null,
+    "pos": "noun",
+    "register": "neutral"
+  },
+  {
+    "word": "fascinate",
+    "date_added": "2026-06-11",
+    "category": "emotion",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "verb",
+    "register": "neutral"
+  },
+  {
+    "word": "innovative",
+    "date_added": "2026-06-11",
+    "category": "concept",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "adjective",
+    "register": "neutral"
+  },
+  {
+    "word": "horizon",
+    "date_added": "2026-06-11",
+    "category": "place",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "noun",
+    "register": "neutral"
+  },
+  {
+    "word": "anxiety",
+    "date_added": "2026-06-11",
+    "category": "emotion",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "noun",
+    "register": "neutral"
+  },
+  {
+    "word": "perception",
+    "date_added": "2026-06-12",
+    "category": "concept",
+    "seen_count": 3,
+    "weak": false,
+    "weak_date": null,
+    "pos": "noun",
+    "register": "neutral"
+  },
+  {
+    "word": "venture",
+    "date_added": "2026-06-12",
+    "category": "action",
+    "seen_count": 2,
+    "weak": false,
+    "weak_date": null,
+    "pos": "noun",
+    "register": "neutral"
+  },
+  {
+    "word": "subtle",
+    "date_added": "2026-06-12",
+    "category": "concept",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "adjective",
+    "register": "neutral"
+  },
+  {
+    "word": "elaborate",
+    "date_added": "2026-06-12",
+    "category": "object",
+    "seen_count": 3,
+    "weak": false,
+    "weak_date": null,
+    "pos": "adjective",
+    "register": "neutral"
+  },
+  {
+    "word": "prior",
+    "date_added": "2026-06-12",
+    "category": "concept",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "adjective",
+    "register": "neutral"
+  },
+  {
+    "word": "diminish",
+    "date_added": "2026-06-12",
+    "category": "action",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "verb",
+    "register": "neutral"
+  },
+  {
+    "word": "serene",
+    "date_added": "2026-06-12",
+    "category": "emotion",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "adjective",
+    "register": "neutral"
+  },
+  {
+    "word": "obstacle",
+    "date_added": "2026-06-12",
+    "category": "object",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "noun",
+    "register": "neutral"
+  },
+  {
+    "word": "sustainable",
+    "date_added": "2026-06-13",
+    "category": "object",
+    "seen_count": 2,
+    "weak": false,
+    "weak_date": null,
+    "pos": "adjective",
+    "register": "neutral"
+  },
+  {
+    "word": "confident",
+    "date_added": "2026-06-13",
+    "category": "emotion",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "adjective",
+    "register": "neutral"
+  },
+  {
+    "word": "expand",
+    "date_added": "2026-06-13",
+    "category": "action",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "verb",
+    "register": "neutral"
+  },
+  {
+    "word": "delicious",
+    "date_added": "2026-06-13",
+    "category": "food",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "adjective",
+    "register": "neutral"
+  },
+  {
+    "word": "fierce",
+    "date_added": "2026-06-13",
+    "category": "nature",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "adjective",
+    "register": "neutral"
+  },
+  {
+    "word": "initiative",
+    "date_added": "2026-06-13",
+    "category": "concept",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "noun",
+    "register": "neutral"
+  },
+  {
+    "word": "ancient",
+    "date_added": "2026-06-13",
+    "category": "place",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "adjective",
+    "register": "neutral"
+  },
+  {
+    "word": "genuine",
+    "date_added": "2026-06-13",
+    "category": "emotion",
+    "seen_count": 2,
+    "weak": false,
+    "weak_date": null,
+    "pos": "adjective",
+    "register": "neutral"
+  },
+  {
+    "word": "consideration",
+    "date_added": "2026-06-14",
+    "category": "concept",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "noun",
+    "register": "neutral"
+  },
+  {
+    "word": "browse",
+    "date_added": "2026-06-14",
+    "category": "action",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "verb",
+    "register": "neutral"
+  },
+  {
+    "word": "renew",
+    "date_added": "2026-06-14",
+    "category": "action",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "verb",
+    "register": "neutral"
+  },
+  {
+    "word": "tranquil",
+    "date_added": "2026-06-14",
+    "category": "nature",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "adjective",
+    "register": "neutral"
+  },
+  {
+    "word": "achievement",
+    "date_added": "2026-06-14",
+    "category": "concept",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "noun",
+    "register": "neutral"
+  },
+  {
+    "word": "consequently",
+    "date_added": "2026-06-14",
+    "category": "time",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "adverb",
+    "register": "neutral"
+  },
+  {
+    "word": "captivate",
+    "date_added": "2026-06-14",
+    "category": "emotion",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "verb",
+    "register": "neutral"
+  },
+  {
+    "word": "diligent",
+    "date_added": "2026-06-14",
+    "category": "character",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "adjective",
+    "register": "neutral"
+  },
+  {
+    "word": "aesthetic",
+    "date_added": "2026-06-16",
+    "category": "object",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "adjective",
+    "register": "neutral"
+  },
+  {
+    "word": "dormant",
+    "date_added": "2026-06-16",
+    "category": "nature",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "adjective",
+    "register": "neutral"
+  },
+  {
+    "word": "momentum",
+    "date_added": "2026-06-16",
+    "category": "action",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "noun",
+    "register": "neutral"
+  },
+  {
+    "word": "embody",
+    "date_added": "2026-06-16",
+    "category": "concept",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "verb",
+    "register": "neutral"
+  },
+  {
+    "word": "traverse",
+    "date_added": "2026-06-16",
+    "category": "action",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "verb",
+    "register": "neutral"
+  },
+  {
+    "word": "sophisticated",
+    "date_added": "2026-06-17",
+    "category": "object",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "adjective",
+    "register": "neutral"
+  },
+  {
+    "word": "spontaneous",
+    "date_added": "2026-06-17",
+    "category": "action",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "adjective",
+    "register": "neutral"
+  },
+  {
+    "word": "resilience",
+    "date_added": "2026-06-17",
+    "category": "concept",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "noun",
+    "register": "neutral"
+  },
+  {
+    "word": "enormous",
+    "date_added": "2026-06-17",
+    "category": "object",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "adjective",
+    "register": "neutral"
+  },
+  {
+    "word": "optimistic",
+    "date_added": "2026-06-17",
+    "category": "emotion",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "adjective",
+    "register": "neutral"
+  },
+  {
+    "word": "transcend",
+    "date_added": "2026-06-17",
+    "category": "concept",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "verb",
+    "register": "formal"
+  },
+  {
+    "word": "surge",
+    "date_added": "2026-06-18",
+    "category": "action",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "verb",
+    "register": "neutral"
+  },
+  {
+    "word": "consequence",
+    "date_added": "2026-06-18",
+    "category": "concept",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "noun",
+    "register": "neutral"
+  },
+  {
+    "word": "navigate",
+    "date_added": "2026-06-18",
+    "category": "action",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "verb",
+    "register": "neutral"
+  },
+  {
+    "word": "equilibrium",
+    "date_added": "2026-06-19",
+    "category": "concept",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "noun",
+    "register": "formal"
+  },
+  {
+    "word": "marvel",
+    "date_added": "2026-06-19",
+    "category": "emotion",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "verb/noun",
+    "register": "neutral"
+  },
+  {
+    "word": "migration",
+    "date_added": "2026-06-19",
+    "category": "nature",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "noun",
+    "register": "neutral"
+  },
+  {
+    "word": "sustain",
+    "date_added": "2026-06-19",
+    "category": "action",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "verb",
+    "register": "neutral"
+  },
+  {
+    "word": "insight",
+    "date_added": "2026-06-19",
+    "category": "concept",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "noun",
+    "register": "neutral"
+  },
+  {
+    "word": "nurture",
+    "date_added": "2026-06-19",
+    "category": "action",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "verb / noun",
+    "register": "neutral"
+  },
+  {
+    "word": "integrity",
+    "date_added": "2026-06-19",
+    "category": "concept",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "noun",
+    "register": "formal"
+  },
+  {
+    "word": "endeavor",
+    "date_added": "2026-06-19",
+    "category": "action",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "verb/noun",
+    "register": "neutral"
+  },
+  {
+    "word": "deliberate",
+    "date_added": "2026-06-20",
+    "category": "action",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "adjective",
+    "register": "neutral"
+  },
+  {
+    "word": "biodiversity",
+    "date_added": "2026-06-20",
+    "category": "nature",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "noun",
+    "register": "formal"
+  },
+  {
+    "word": "fridge",
+    "date_added": "2026-06-20",
+    "category": "object",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "noun",
+    "register": "informal"
+  },
+  {
+    "word": "sacrifice",
+    "date_added": "2026-06-20",
+    "category": "action",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "noun",
+    "register": "neutral"
+  },
+  {
+    "word": "empathy",
+    "date_added": "2026-06-20",
+    "category": "emotion",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "noun",
+    "register": "neutral"
+  },
+  {
+    "word": "threshold",
+    "date_added": "2026-06-20",
+    "category": "place",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "noun",
+    "register": "neutral"
+  },
+  {
+    "word": "clash",
+    "date_added": "2026-07-06",
+    "category": "concept",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "verb",
+    "register": "neutral"
+  },
+  {
+    "word": "tackle",
+    "date_added": "2026-07-06",
+    "category": "action",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "verb",
+    "register": "neutral"
+  },
+  {
+    "word": "glimmer",
+    "date_added": "2026-07-06",
+    "category": "nature",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "noun",
+    "register": "neutral"
+  },
+  {
+    "word": "tactic",
+    "date_added": "2026-07-06",
+    "category": "concept",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "noun",
+    "register": "formal"
+  },
+  {
+    "word": "aroma",
+    "date_added": "2026-07-06",
+    "category": "food",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "noun",
+    "register": "neutral"
+  },
+  {
+    "word": "vague",
+    "date_added": "2026-07-06",
+    "category": "concept",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "adjective",
+    "register": "neutral"
+  },
+  {
+    "word": "shatter",
+    "date_added": "2026-07-06",
+    "category": "action",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "verb",
+    "register": "neutral"
+  },
+  {
+    "word": "hollow",
+    "date_added": "2026-07-06",
+    "category": "object",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "adjective",
+    "register": "neutral"
+  },
+  {
+    "word": "agitated",
+    "date_added": "2026-07-06",
+    "category": "emotion",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "adjective",
+    "register": "neutral"
+  },
+  {
+    "word": "clumsy",
+    "date_added": "2026-07-06",
+    "category": "body",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "adjective",
+    "register": "neutral"
+  },
+  {
+    "word": "beverage",
+    "date_added": "2026-07-06",
+    "category": "food",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "noun",
+    "register": "formal"
+  },
+  {
+    "word": "postpone",
+    "date_added": "2026-07-06",
+    "category": "time",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "verb",
+    "register": "neutral"
+  },
+  {
+    "word": "fluctuate",
+    "date_added": "2026-07-06",
+    "category": "concept",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "verb",
+    "register": "formal"
+  },
+  {
+    "word": "glance",
+    "date_added": "2026-07-06",
+    "category": "action",
+    "seen_count": 2,
+    "weak": false,
+    "weak_date": null,
+    "pos": "verb",
+    "register": "neutral"
+  },
+  {
+    "word": "habitat",
+    "date_added": "2026-07-06",
+    "category": "nature",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "noun",
+    "register": "neutral"
+  },
+  {
+    "word": "sincere",
+    "date_added": "2026-07-06",
+    "category": "emotion",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "adjective",
+    "register": "neutral"
+  },
+  {
+    "word": "wardrobe",
+    "date_added": "2026-07-06",
+    "category": "object",
+    "seen_count": 2,
+    "weak": false,
+    "weak_date": null,
+    "pos": "noun",
+    "register": "neutral"
+  },
+  {
+    "word": "distinguish",
+    "date_added": "2026-07-06",
+    "category": "concept",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "verb",
+    "register": "formal"
+  },
+  {
+    "word": "clandestine",
+    "date_added": "2026-07-06",
+    "category": "concept",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "adjective",
+    "register": "formal"
+  },
+  {
+    "word": "drizzle",
+    "date_added": "2026-07-06",
+    "category": "nature",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "noun",
+    "register": "neutral"
+  },
+  {
+    "word": "gargantuan",
+    "date_added": "2026-07-06",
+    "category": "concept",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "adjective",
+    "register": "neutral"
+  },
+  {
+    "word": "mumble",
+    "date_added": "2026-07-06",
+    "category": "body",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "verb",
+    "register": "informal"
+  },
+  {
+    "word": "pantry",
+    "date_added": "2026-07-06",
+    "category": "object",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "noun",
+    "register": "neutral"
+  },
+  {
+    "word": "ruminate",
+    "date_added": "2026-07-06",
+    "category": "concept",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "verb",
+    "register": "formal"
+  },
+  {
+    "word": "scavenge",
+    "date_added": "2026-07-06",
+    "category": "action",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "verb",
+    "register": "neutral"
+  },
+  {
+    "word": "tether",
+    "date_added": "2026-07-06",
+    "category": "action",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "verb",
+    "register": "neutral"
+  },
+  {
+    "word": "yearn",
+    "date_added": "2026-07-06",
+    "category": "emotion",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "verb",
+    "register": "formal"
+  },
+  {
+    "word": "perceive",
+    "date_added": "2026-07-07",
+    "category": "action",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "verb",
+    "register": "neutral"
+  },
+  {
+    "word": "stumble",
+    "date_added": "2026-07-07",
+    "category": "action",
+    "seen_count": 2,
+    "weak": false,
+    "weak_date": null,
+    "pos": "verb",
+    "register": "neutral"
+  },
+  {
+    "word": "drought",
+    "date_added": "2026-07-07",
+    "category": "nature",
+    "seen_count": 2,
+    "weak": false,
+    "weak_date": null,
+    "pos": "noun",
+    "register": "neutral"
+  },
+  {
+    "word": "valid",
+    "date_added": "2026-07-07",
+    "category": "concept",
+    "seen_count": 2,
+    "weak": false,
+    "weak_date": null,
+    "pos": "adjective",
+    "register": "neutral"
+  },
+  {
+    "word": "apprehensive",
+    "date_added": "2026-07-07",
+    "category": "emotion",
+    "seen_count": 2,
+    "weak": false,
+    "weak_date": null,
+    "pos": "adjective",
+    "register": "formal"
+  },
+  {
+    "word": "tapestry",
+    "date_added": "2026-07-07",
+    "category": "object",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "noun",
+    "register": "neutral"
+  },
+  {
+    "word": "hasty",
+    "date_added": "2026-07-07",
+    "category": "concept",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "adjective",
+    "register": "neutral"
+  },
+  {
+    "word": "meadow",
+    "date_added": "2026-07-07",
+    "category": "place",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "noun",
+    "register": "neutral"
+  },
+  {
+    "word": "vulnerable",
+    "date_added": "2026-07-07",
+    "category": "concept",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "adjective",
+    "register": "formal"
+  },
+  {
+    "word": "flicker",
+    "date_added": "2026-07-08",
+    "category": "nature",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null,
+    "pos": "verb",
+    "register": "neutral"
+  }
+]

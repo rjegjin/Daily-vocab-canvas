@@ -1,0 +1,182 @@
+[
+  {
+    "date": "2026-06-09",
+    "domain": "workplace",
+    "keigo_level": "敬語",
+    "scenario_ko": "신입 사원이 상사에게 보고서를 제출하는 상황",
+    "target_expressions": [
+      "お疲れ様です",
+      "ご確認いただけますでしょうか",
+      "よろしくお願いいたします"
+    ],
+    "tts_sent": true
+  },
+  {
+    "date": "2026-06-10",
+    "domain": "service",
+    "keigo_level": "丁寧語",
+    "scenario_ko": "레스토랑에서 고객이 메뉴를 주문하는 상황",
+    "target_expressions": [
+      "メニューをお願いします。",
+      "おすすめは何ですか？",
+      "もう少し時間をいただけますか？"
+    ],
+    "tts_sent": true
+  },
+  {
+    "date": "2026-06-11",
+    "domain": "social",
+    "keigo_level": "敬語",
+    "scenario_ko": "직장에서 상사에게 결근 사유를 문의하는 상황",
+    "target_expressions": [
+      "申し訳ございませんが",
+      "体調が優れません",
+      "ご理解いただけますと幸いです"
+    ],
+    "tts_sent": true
+  },
+  {
+    "date": "2026-06-12",
+    "domain": "travel",
+    "keigo_level": "普通体",
+    "scenario_ko": "한국인이 일본에서 호텔 체크인할 때",
+    "target_expressions": [
+      "予約を確認したいのですが",
+      "お名前をお願いします",
+      "チェックインをお願いします"
+    ],
+    "tts_sent": true
+  },
+  {
+    "date": "2026-06-13",
+    "domain": "workplace",
+    "keigo_level": "丁寧語",
+    "scenario_ko": "사원이 상사에게 오늘 회의 일정을 확인하는 상황",
+    "target_expressions": [
+      "失礼ですが",
+      "ご確認いただけますか？",
+      "よろしくお願いいたします"
+    ],
+    "tts_sent": true
+  },
+  {
+    "date": "2026-06-14",
+    "domain": "service",
+    "keigo_level": "丁寧語",
+    "scenario_ko": "레스토랑에서 주문하는 상황",
+    "target_expressions": [
+      "こちらをお願いします。",
+      "少々お待ちください。",
+      "かしこまりました。"
+    ],
+    "tts_sent": true
+  },
+  {
+    "date": "2026-06-15",
+    "domain": "social",
+    "keigo_level": "普通体",
+    "scenario_ko": "친구와 카페에서 만나서 인사하고 대화하기",
+    "target_expressions": [
+      "こんにちは",
+      "久しぶりですね",
+      "そうですね"
+    ],
+    "tts_sent": true
+  },
+  {
+    "date": "2026-06-16",
+    "domain": "travel",
+    "keigo_level": "丁寧語",
+    "scenario_ko": "한국인 여행객이 일본어로 호텔 프런트에서 체크인하는 상황",
+    "target_expressions": [
+      "予約を確認したいのですが",
+      "こちらが予約確認書です",
+      "お部屋は何号ですか"
+    ],
+    "tts_sent": true
+  },
+  {
+    "date": "2026-06-17",
+    "domain": "workplace",
+    "keigo_level": "丁寧語",
+    "scenario_ko": "신입 사원이 상사에게 보고서를 제출하며 인사를 하는 상황",
+    "target_expressions": [
+      "お疲れ様でございます",
+      "ご確認いただけますと幸いです",
+      "何卒よろしくお願い申し上げます"
+    ],
+    "tts_sent": true
+  },
+  {
+    "date": "2026-06-18",
+    "domain": "service",
+    "keigo_level": "丁寧語",
+    "scenario_ko": "손님이 레스토랑에서 주문을 하고 결제하는 상황",
+    "target_expressions": [
+      "いらっしゃいませ",
+      "お待たせいたしました",
+      "お会計をお願いいたします"
+    ],
+    "tts_sent": true
+  },
+  {
+    "date": "2026-06-19",
+    "domain": "social",
+    "keigo_level": "丁寧語",
+    "scenario_ko": "회사 동료에게 점심 식사를 제안하는 상황",
+    "target_expressions": [
+      "お昼ごろはいかがでしょうか。",
+      "ご都合はいかがですか。",
+      "ご一緒してもよろしいですか。"
+    ],
+    "tts_sent": true
+  },
+  {
+    "date": "2026-06-20",
+    "domain": "travel",
+    "keigo_level": "敬語",
+    "scenario_ko": "한국인 관광객이 일본 여권을 보여주며 호텔 프런트에 체크인하는 상황",
+    "target_expressions": [
+      "予約を確認させていただきます",
+      "お荷物をお預かり致します",
+      "ご滞在をお楽しみくださいませ"
+    ],
+    "tts_sent": true
+  },
+  {
+    "date": "2026-07-06",
+    "domain": "workplace",
+    "keigo_level": "丁寧語",
+    "scenario_ko": "상사에게 내일 있을 회의 준비가 완료되었음을 보고하고, 추가로 확인이 필요한 사항이 있는지 묻는 상황입니다.",
+    "target_expressions": [
+      "準備が整いました",
+      "何か確認しておくことはありますか",
+      "お手数をおかけします"
+    ],
+    "tts_sent": true
+  },
+  {
+    "date": "2026-07-07",
+    "domain": "service",
+    "keigo_level": "敬語",
+    "scenario_ko": "백화점 명품관에서 점원에게 제품 재고를 문의하고 안내를 받는 상황입니다.",
+    "target_expressions": [
+      "～の在庫はございますでしょうか",
+      "あいにくですが",
+      "少々お待ちいただけますか"
+    ],
+    "tts_sent": true
+  },
+  {
+    "date": "2026-07-08",
+    "domain": "social",
+    "keigo_level": "敬語",
+    "scenario_ko": "백화점에서 점원에게 찾는 상품이 어디 있는지 정중하게 물어보고 안내를 받는 상황입니다.",
+    "target_expressions": [
+      "恐れ入りますが",
+      "～はどちらにございますか",
+      "かしこまりました"
+    ],
+    "tts_sent": true
+  }
+]

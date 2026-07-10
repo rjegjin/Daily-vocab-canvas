@@ -74,8 +74,8 @@
   {
     "word": "悲しみ",
     "date_added": "2026-04-02",
-    "category": "unknown",
-    "seen_count": 1,
+    "category": "emotion",
+    "seen_count": 3,
     "weak": false,
     "weak_date": null
   },
@@ -122,8 +122,8 @@
   {
     "word": "椅子",
     "date_added": "2026-04-02",
-    "category": "unknown",
-    "seen_count": 1,
+    "category": "object",
+    "seen_count": 3,
     "weak": false,
     "weak_date": null
   },
@@ -154,16 +154,16 @@
   {
     "word": "森林",
     "date_added": "2026-04-03",
-    "category": "unknown",
-    "seen_count": 1,
+    "category": "nature",
+    "seen_count": 2,
     "weak": false,
     "weak_date": null
   },
   {
     "word": "眼鏡",
     "date_added": "2026-04-03",
-    "category": "unknown",
-    "seen_count": 1,
+    "category": "object",
+    "seen_count": 2,
     "weak": false,
     "weak_date": null
   },
@@ -210,8 +210,8 @@
   {
     "word": "希望",
     "date_added": "2026-04-03",
-    "category": "unknown",
-    "seen_count": 1,
+    "category": "concept",
+    "seen_count": 2,
     "weak": false,
     "weak_date": null
   },
@@ -258,8 +258,8 @@
   {
     "word": "雲",
     "date_added": "2026-04-03",
-    "category": "unknown",
-    "seen_count": 1,
+    "category": "nature",
+    "seen_count": 2,
     "weak": false,
     "weak_date": null
   },
@@ -1099,7 +1099,7 @@
     "word": "珈琲",
     "date_added": "2026-04-29",
     "category": "food",
-    "seen_count": 1,
+    "seen_count": 2,
     "weak": false,
     "weak_date": null
   },
@@ -1754,6 +1754,214 @@
   {
     "word": "塔",
     "date_added": "2026-05-05",
+    "category": "place",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "書く",
+    "date_added": "2026-07-06",
+    "category": "action",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "林檎酒",
+    "date_added": "2026-07-06",
+    "category": "food",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "狐",
+    "date_added": "2026-07-06",
+    "category": "animal",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "瞳孔",
+    "date_added": "2026-07-06",
+    "category": "body",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "港",
+    "date_added": "2026-07-06",
+    "category": "place",
+    "seen_count": 2,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "航海",
+    "date_added": "2026-07-07",
+    "category": "action",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "夕闇",
+    "date_added": "2026-07-07",
+    "category": "nature",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "怒髪",
+    "date_added": "2026-07-07",
+    "category": "emotion",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "走獣",
+    "date_added": "2026-07-07",
+    "category": "animal",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "胃袋",
+    "date_added": "2026-07-07",
+    "category": "body",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "団子",
+    "date_added": "2026-07-07",
+    "category": "food",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "永遠",
+    "date_added": "2026-07-07",
+    "category": "concept",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "悲鳴",
+    "date_added": "2026-07-07",
+    "category": "emotion",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "雷鳴",
+    "date_added": "2026-07-07",
+    "category": "nature",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "提灯",
+    "date_added": "2026-07-07",
+    "category": "object",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "漕ぐ",
+    "date_added": "2026-07-07",
+    "category": "action",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "炒り卵",
+    "date_added": "2026-07-07",
+    "category": "food",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "海豚",
+    "date_added": "2026-07-07",
+    "category": "animal",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "頸筋",
+    "date_added": "2026-07-07",
+    "category": "body",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "打算",
+    "date_added": "2026-07-07",
+    "category": "concept",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "坂道",
+    "date_added": "2026-07-07",
+    "category": "place",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "飛ぶ",
+    "date_added": "2026-07-08",
+    "category": "action",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "鷹",
+    "date_added": "2026-07-08",
+    "category": "animal",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "腕",
+    "date_added": "2026-07-08",
+    "category": "body",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "時間",
+    "date_added": "2026-07-08",
+    "category": "concept",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "海",
+    "date_added": "2026-07-08",
     "category": "place",
     "seen_count": 1,
     "weak": false,

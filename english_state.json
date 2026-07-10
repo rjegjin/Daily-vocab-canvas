@@ -1,0 +1,286 @@
+{
+  "latest_en_vocab": {
+    "date": "2026-07-08",
+    "items": [
+      {
+        "word": "apprehensive",
+        "ipa": "/ˌæprɪˈhensɪv/",
+        "pos": "adjective",
+        "definition_en": "feeling worried or nervous that something unpleasant may happen in the near future",
+        "collocation": "feel apprehensive / deeply apprehensive",
+        "example": "He felt apprehensive about the results of his medical examination this morning.",
+        "category": "emotion",
+        "register": "neutral"
+      },
+      {
+        "word": "flicker",
+        "ipa": "/ˈflɪkər/",
+        "pos": "verb",
+        "definition_en": "to shine with a light that is not steady or that goes on and off",
+        "collocation": "flicker of hope / lights flicker",
+        "example": "The candle began to flicker as a cold draft entered the dark room.",
+        "category": "nature",
+        "register": "neutral"
+      },
+      {
+        "word": "utensil",
+        "ipa": "/juːˈtensəl/",
+        "pos": "noun",
+        "definition_en": "a tool or container used for a specific task, especially in a domestic kitchen",
+        "collocation": "kitchen utensil / cooking utensil",
+        "example": "She organized every kitchen utensil neatly inside the drawers before starting to cook dinner.",
+        "category": "object",
+        "register": "neutral"
+      },
+      {
+        "word": "stumble",
+        "ipa": "/ˈstʌmbəl/",
+        "pos": "verb",
+        "definition_en": "to hit your foot against something while walking and almost fall down to the ground",
+        "collocation": "stumble over / stumble across",
+        "example": "I happened to stumble across an old photograph while cleaning out my dusty attic.",
+        "category": "action",
+        "register": "neutral"
+      },
+      {
+        "word": "appetizing",
+        "ipa": "/ˈæpɪtaɪzɪŋ/",
+        "pos": "adjective",
+        "definition_en": "having a smell or appearance that makes people want to eat or drink it",
+        "collocation": "look appetizing / smell appetizing",
+        "example": "The freshly baked bread on the table looked incredibly appetizing to the hungry guests.",
+        "category": "food",
+        "register": "neutral"
+      },
+      {
+        "word": "drought",
+        "ipa": "/draʊt/",
+        "pos": "noun",
+        "definition_en": "a long period of time when there is little or no rain in a region",
+        "collocation": "severe drought / during a drought",
+        "example": "The farmers suffered greatly because the severe drought destroyed most of their summer crops.",
+        "category": "nature",
+        "register": "formal"
+      },
+      {
+        "word": "valid",
+        "ipa": "/ˈvælɪd/",
+        "pos": "adjective",
+        "definition_en": "based on truth or reason and able to be accepted as logically sound and fair",
+        "collocation": "valid reason / valid point",
+        "example": "His complaint was perfectly valid considering the poor service we received at the restaurant.",
+        "category": "concept",
+        "register": "neutral"
+      },
+      {
+        "word": "wardrobe",
+        "ipa": "/ˈwɔːrdroʊb/",
+        "pos": "noun",
+        "definition_en": "a tall cupboard in which you hang your clothes and store your personal items",
+        "collocation": "built-in wardrobe / open the wardrobe",
+        "example": "He spent all afternoon folding his laundry and putting it away in the wooden wardrobe.",
+        "category": "object",
+        "register": "neutral"
+      },
+      {
+        "word": "glance",
+        "ipa": "/ɡlæns/",
+        "pos": "verb",
+        "definition_en": "to look quickly at something or someone for a very short period of time",
+        "collocation": "glance at / glance around",
+        "example": "She managed to glance at the clock before rushing out the door to catch her train.",
+        "category": "action",
+        "register": "neutral"
+      }
+    ]
+  },
+  "latest_en_phrase": {
+    "date": "2026-07-08",
+    "items": [
+      {
+        "phrase": "call it a day",
+        "meaning_ko": "하던 일을 마치다, 오늘 할 일을 끝내다",
+        "example": "We've been working for ten hours; let's call it a day.",
+        "register": "neutral",
+        "trap": "오늘의 날을 부르다라고 직역하면 안 됩니다. 업무나 활동을 종료할 때 쓰는 관용구입니다.",
+        "category": "work"
+      },
+      {
+        "phrase": "draw the line",
+        "meaning_ko": "한계를 정하다, 선을 긋다",
+        "example": "I'm happy to help with the project, but I draw the line at doing all the work myself.",
+        "register": "neutral",
+        "trap": "물리적으로 선을 그린다는 뜻이 아니라, 허용 가능한 행동의 범위를 정할 때 사용합니다.",
+        "category": "conflict"
+      },
+      {
+        "phrase": "get the ball rolling",
+        "meaning_ko": "일을 시작하다, 착수하다",
+        "example": "We need to get the ball rolling on the new marketing campaign immediately.",
+        "register": "neutral",
+        "trap": "공을 굴리다라는 뜻이 아니라, 회의나 프로젝트 등 어떤 일을 본격적으로 시작할 때 쓰는 표현입니다.",
+        "category": "work"
+      },
+      {
+        "phrase": "be on the fence",
+        "meaning_ko": "결정을 못 내리고 있다, 중립을 지키다",
+        "example": "I am still on the fence about whether to accept the job offer.",
+        "register": "neutral",
+        "trap": "울타리 위에 있다는 뜻으로, 결정을 내리기 어려워 양쪽 의견 사이에서 고민할 때 사용합니다.",
+        "category": "concept"
+      },
+      {
+        "phrase": "pick someone's brain",
+        "meaning_ko": "누구의 의견이나 조언을 구하다",
+        "example": "I'd like to pick your brain about the best way to handle this client.",
+        "register": "informal",
+        "trap": "머리를 끄집어내다라는 의미가 아니라, 경험이 많은 사람에게 조언이나 정보를 요청할 때 씁니다.",
+        "category": "social"
+      },
+      {
+        "phrase": "get the most out of",
+        "meaning_ko": "~에서 최대한의 성과/즐거움을 얻다",
+        "example": "Follow these tips to get the most out of your study time.",
+        "register": "neutral",
+        "trap": "단순히 '최고를 얻다'가 아니라, 주어진 기회나 시간 등을 얼마나 효율적으로 활용하는지에 초점을 둡니다.",
+        "category": "academic"
+      }
+    ]
+  },
+  "latest_en_dialogue": {
+    "date": "2026-07-09",
+    "item": {
+      "date": "2026-07-09",
+      "domain": "social",
+      "scenario_ko": "주말에 지인을 우연히 동네 카페에서 만났을 때 나누는 가벼운 대화 상황입니다.",
+      "context_en": "You bump into an acquaintance at a local coffee shop and strike up a brief conversation.",
+      "target_expressions": [
+        "Small world, isn't it?",
+        "What brings you to this part of town?",
+        "I should get going, but it was great catching up."
+      ],
+      "model_dialogue": [
+        {
+          "role": "A",
+          "text": "Wait, is that Min-ji? Small world, isn't it?"
+        },
+        {
+          "role": "B",
+          "text": "Oh my gosh! Hi! I haven't seen you in forever. What are you doing here?"
+        },
+        {
+          "role": "A",
+          "text": "I just moved into the apartment building across the street. What brings you to this part of town?"
+        },
+        {
+          "role": "B",
+          "text": "I’m actually visiting a friend who lives nearby. I'm just grabbing a quick iced latte before I head over."
+        },
+        {
+          "role": "A",
+          "text": "That sounds nice! Well, I should get going, but it was great catching up."
+        },
+        {
+          "role": "B",
+          "text": "You too! Let's definitely grab coffee properly sometime soon."
+        }
+      ],
+      "tts_script": "Wait, is that Min-ji? Small world, isn't it? Oh my gosh! Hi! I haven't seen you in forever. What are you doing here? I just moved into the apartment building across the street. What brings you to this part of town? I’m actually visiting a friend who lives nearby. I'm just grabbing a quick iced latte before I head over. That sounds nice! Well, I should get going, but it was great catching up. You too! Let's definitely grab coffee properly sometime soon.",
+      "cultural_note": "영어권 국가에서는 우연히 아는 사람을 만났을 때 'Small world'라는 표현을 매우 자주 사용합니다. 한국식으로 '세상 참 좁네요'라는 직역 표현도 자연스럽게 통용됩니다.",
+      "korean_trap": "학습자 실수: 'What are you doing here?' (이 질문은 상황에 따라 '여기서 뭐 하는 거야?'라고 따지는 듯한 어조로 들릴 수 있음) / 더 나은 표현: 'What brings you to this neighborhood?' (어떤 일로 이 동네에 오셨나요? 가 훨씬 부드럽고 호의적인 질문입니다.)"
+    }
+  },
+  "writing_pending": {
+    "date": "2026-06-14",
+    "topic_ko": "지속 가능한 생활 방식의 중요성"
+  },
+  "latest_ja_dialogue": {
+    "date": "2026-07-08",
+    "item": {
+      "date": "2026-07-08",
+      "domain": "social",
+      "keigo_level": "敬語",
+      "scenario_ko": "백화점에서 점원에게 찾는 상품이 어디 있는지 정중하게 물어보고 안내를 받는 상황입니다.",
+      "context_ja": "デパートの店員に探している商品がどこにあるか丁寧に尋ねてください。",
+      "target_expressions": [
+        "恐れ入りますが",
+        "～はどちらにございますか",
+        "かしこまりました"
+      ],
+      "model_dialogue": [
+        {
+          "role": "A",
+          "text": "恐れ入りますが、紳士用のネクタイはどちらにございますか。"
+        },
+        {
+          "role": "B",
+          "text": "ネクタイ売り場でございますね。あちらの奥にございます。"
+        },
+        {
+          "role": "A",
+          "text": "ありがとうございます。ちなみに、季節限定のコーナーはすぐ近くですか。"
+        },
+        {
+          "role": "B",
+          "text": "はい、ネクタイ売り場の隣にございます。"
+        },
+        {
+          "role": "A",
+          "text": "ご丁寧にありがとうございます。"
+        },
+        {
+          "role": "B",
+          "text": "かしこまりました。ごゆっくりお買い物をお楽しみください。"
+        }
+      ],
+      "tts_script": "恐れ入りますが、紳士用のネクタイはどちらにございますか。ネクタイ売り場でございますね。あちらの奥にございます。ありがとうございます。ちなみに、季節限定のコーナーはすぐ近くですか。はい、ネクタイ売り場の隣にございます。ご丁寧にありがとうございます。かしこまりました。ごゆっくりお買い物をお楽しみください。",
+      "keigo_note": "상점 점원에게는 '丁寧語(데네이고)'를 넘어선 '尊敬語(존경어)'와 '謙譲語(겸양어)'가 포함된 '敬語(경어)'를 사용합니다. '있습니까?'를 물을 때 'ありますか' 대신 'ございますか'를 사용하면 훨씬 격식 있고 정중하게 들립니다.",
+      "korean_trap": "한국어의 '있어요?'를 직역하여 'どこにありますか？'라고 하기 쉽습니다. 점원에게는 'どこにございますか？'라고 하거나 더 정중하게 'どちらにございますでしょうか？'를 쓰는 것이 자연스럽습니다."
+    }
+  },
+  "latest_zh_dialogue": {
+    "date": "2026-07-08",
+    "item": {
+      "date": "2026-07-08",
+      "domain": "social",
+      "formality": "casual",
+      "complement_focus": "方向补语",
+      "scenario_ko": "친구와 함께 길을 걷다가 지갑을 떨어뜨린 것을 알게 되어, 바닥에 떨어진 지갑을 주워달라고 부탁하는 상황입니다.",
+      "context_zh": "你在和朋友散步时发现自己的钱包掉在了地上，请朋友帮你捡起来。",
+      "target_patterns": [
+        "掉下来 (diào xià lái)",
+        "捡起来 (jiǎn qǐ lái)",
+        "拿过来 (ná guò lái)"
+      ],
+      "model_dialogue": [
+        {
+          "role": "A",
+          "text": "哎呀，我的钱包好像从口袋里掉下来了。"
+        },
+        {
+          "role": "B",
+          "text": "在哪儿呢？我没看见啊。"
+        },
+        {
+          "role": "A",
+          "text": "就在你脚边，麻烦帮我捡起来一下。"
+        },
+        {
+          "role": "B",
+          "text": "哦，看见了！我帮你捡起来了。"
+        },
+        {
+          "role": "A",
+          "text": "太谢谢了，快拿过来给我吧。"
+        },
+        {
+          "role": "B",
+          "text": "给，下次小心点儿哦！"
+        }
+      ],
+      "tts_script": "哎呀，我的钱包好像从口袋里掉下来了。在哪儿呢？我没看见啊。就在你脚边，麻烦帮我捡起来一下。哦，看见了！我帮你捡起来了。太谢谢了，快拿过来给我吧。给，下次小心点儿哦！",
+      "grammar_note": "방향보어 '동사+오다(来)/가다(去)'는 동작의 방향을 나타냅니다. 한국어와 달리 중국어는 '동사(捡) + 방향보어(起来)' 순서로 쓰이며, 목적어가 장소나 구체적인 물건일 경우 '동사+목적어+방향보어' 혹은 '동사+방향보어+목적어' 구조를 모두 사용할 수 있지만, '捡起来(주워 올리다)'와 같이 결합된 형태를 주로 사용합니다.",
+      "korean_trap": "오류: 帮我捡起来钱包 (한국어식 어순으로 목적어를 뒤에 놓음) / 교정: 帮我把钱包捡起来 (把자를 사용하여 목적어를 앞으로 끌어오거나, 帮我捡起钱包라고 하는 것이 더 자연스럽습니다.)"
+    }
+  }
+}

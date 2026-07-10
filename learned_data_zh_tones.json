@@ -1,0 +1,35 @@
+[
+  {
+    "id": "tone_pair_ma",
+    "title": "ma 최소대립쌍",
+    "base_syllable": "ma",
+    "category": "minimal_pair",
+    "date_added": "2026-06-08",
+    "last_seen": "2026-07-06",
+    "seen_count": 12,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "id": "tone_pair_shi",
+    "title": "shi 최소대립쌍",
+    "base_syllable": "shi",
+    "category": "minimal_pair",
+    "date_added": "2026-06-09",
+    "last_seen": "2026-07-07",
+    "seen_count": 11,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "id": "tone_pair_mai",
+    "title": "mai 최소대립쌍",
+    "base_syllable": "mai",
+    "category": "minimal_pair",
+    "date_added": "2026-06-09",
+    "last_seen": "2026-07-08",
+    "seen_count": 11,
+    "weak": false,
+    "weak_date": null
+  }
+]

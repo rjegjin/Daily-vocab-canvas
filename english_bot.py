@@ -200,7 +200,7 @@ async def post_init(app):
 
 if __name__ == "__main__":
     run_polling_bot(
-        bot_name="English Bot",
+        bot_name="Vocab EN Bot",
         token_envs=TOKEN_ENVS,
         chat_envs=CHAT_ENVS,
         menu_reply=menu_reply,

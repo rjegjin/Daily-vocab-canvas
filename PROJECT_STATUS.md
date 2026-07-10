@@ -1,7 +1,6 @@
 # Daily Vocab Card Bot - 진행 상황 요약
 
 작성일: 2026-06-08
-최근 업데이트: 2026-07-06
 
 ## 1. 현재 프로젝트 상태
 
@@ -39,10 +38,8 @@ AI 분석용으로 repo 내용을 합친 파일이다. 실제 운영 문서가 �
 
 ### Spanish - `spanish.py`
 
-- **텍스트**: OpenAI(기본) 또는 Gemini(대체)로 매일 스페인어 단어 9개 생성
-- **이미지**: OpenAI DALL-E(기본) 또는 Imagen(대체)으로 단어별 visual concept 아이콘 생성
-  - 환경 변수로 제공자 선택: `VOCAB_TEXT_PROVIDER`, `VOCAB_IMAGE_PROVIDER`
-  - 기본값: OpenAI (비용 35% 절감, 속도 개선)
+- Gemini로 매일 스페인어 단어 9개 생성
+- Imagen 4 Fast로 단어별 visual concept 아이콘 생성
 - Pillow로 3x3 flashcard 합성
 - Telegram photo 전송
 - `learned_data_es.json`에 학습 이력 저장
@@ -90,17 +87,17 @@ AI 분석용으로 repo 내용을 합친 파일이다. 실제 운영 문서가 �
 
 영어 모듈들의 공통 helper다.
 
-- 환경 변수 로드 (bot_common의 load_secrets/require_env 사용)
-- OpenAI(기본) 또는 Gemini(대체) client 생성
+- 환경 변수 로드
+- Gemini client 생성
 - JSON 응답 parsing
-- 비용 logging (openai_text, gemini 구분 기록)
+- Gemini token 비용 logging
 - Telegram text/audio 전송
 - 영어 학습 상태 저장
 - learned data merge
 - weak item marking
 - dialogue history 관리
 - writing pending 상태 관리
-- 영어 TTS 생성 (Google Cloud Text-to-Speech)
+- 영어 TTS 생성
 
 주요 데이터 파일:
 
@@ -241,13 +238,10 @@ English fluency series 구성:
 
 ### 공통 엔진 - `card_engine.py`
 
-- OpenAI/Gemini 비용을 `cost_log.json`에 기록 (provider별 구분)
+- Gemini/Imagen 비용을 `cost_log.json`에 기록
 - TTS 문자 수를 월 단위로 누적
 - `budget.json`을 읽어 월 예산 초과 시 실행 중단
 - `lang_enabled`로 언어별 실행 가능 여부 제어
-- 환경 변수로 제공자 선택:
-  - `VOCAB_TEXT_PROVIDER`: openai(기본) 또는 gemini
-  - `VOCAB_IMAGE_PROVIDER`: openai(기본) 또는 imagen
 - 현재 기본 언어 키:
   - `es`
   - `ja`
@@ -268,28 +262,11 @@ English fluency series 구성:
 
 ### 현재 비용 정책
 
-- ES/JA/ZH vocab card는 이미지 생성 비용 발생 (OpenAI DALL-E 기본, Imagen 대체)
+- ES/JA/ZH vocab card는 Imagen sheet 비용이 발생
 - EN vocab/phrase/writing은 image 비용 없음
-- EN dialogue는 TTS 비용 발생 (Google Cloud Text-to-Speech)
-- 텍스트 생성 비용은 `log_cost("openai_text", ...)` 또는 `log_cost("gemini", ...)` 로 구분 기록
+- EN dialogue는 TTS 비용 발생
+- 영어 Gemini text generation 비용은 `log_cost("en", 0, ...)`로 기록
 - TTS는 월 1,000,000자 무료 tier 이후 $4/1M chars 기준으로 계산
-- 비용 절감 (2026-07-06): Gemini → OpenAI 전환으로 전체 비용 약 35% 절감
-
-## 7.5. Bot Bootstrap 리팩터링 (2026-07-06)
-
-`manager_bot.py`와 모든 언어 모듈들이 shared `bot_common` helper를 사용하도록 리팩터링됨.
-
-**변경 사항**:
-- 기존 bespoke 환경 변수 로드 → `bot_common.load_secrets()` 통합
-- 명시적 `require_env()` 호출로 필수 환경 변수 검증
-- `run_bot()` 헬퍼로 Application 빌드 및 polling 보일러플레이트 제거
-
-**이점**:
-- 코드 중복 제거
-- 일관된 환경 변수 처리
-- 향후 크로스 봇 업데이트 시 mh-common 차원에서 통합 관리
-
-참고: `bot_common`은 mh-common 설치된 환경에서만 사용 가능.
 
 ## 8. GitHub Actions
 

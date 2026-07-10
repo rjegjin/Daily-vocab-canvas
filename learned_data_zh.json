@@ -27,7 +27,7 @@
     "word": "奔跑",
     "date_added": "2026-04-02",
     "category": "action",
-    "seen_count": 4,
+    "seen_count": 5,
     "weak": false,
     "weak_date": null
   },
@@ -379,7 +379,7 @@
     "word": "闹钟",
     "date_added": "2026-04-05",
     "category": "object",
-    "seen_count": 3,
+    "seen_count": 5,
     "weak": false,
     "weak_date": null
   },
@@ -483,7 +483,7 @@
     "word": "手指",
     "date_added": "2026-04-06",
     "category": "body",
-    "seen_count": 2,
+    "seen_count": 3,
     "weak": false,
     "weak_date": null
   },
@@ -995,7 +995,7 @@
     "word": "游泳",
     "date_added": "2026-05-02",
     "category": "action",
-    "seen_count": 3,
+    "seen_count": 4,
     "weak": false,
     "weak_date": null
   },
@@ -1147,7 +1147,7 @@
     "word": "卧室",
     "date_added": "2026-05-03",
     "category": "place",
-    "seen_count": 1,
+    "seen_count": 2,
     "weak": false,
     "weak_date": null
   },
@@ -1275,7 +1275,7 @@
     "word": "草莓",
     "date_added": "2026-05-05",
     "category": "food",
-    "seen_count": 2,
+    "seen_count": 4,
     "weak": false,
     "weak_date": null
   },
@@ -1483,6 +1483,158 @@
     "word": "街道",
     "date_added": "2026-05-05",
     "category": "place",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "自豪",
+    "date_added": "2026-07-06",
+    "category": "emotion",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "火山",
+    "date_added": "2026-07-06",
+    "category": "nature",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "骆驼",
+    "date_added": "2026-07-06",
+    "category": "animal",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "皮肤",
+    "date_added": "2026-07-06",
+    "category": "body",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "文化",
+    "date_added": "2026-07-06",
+    "category": "concept",
+    "seen_count": 2,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "乡村",
+    "date_added": "2026-07-06",
+    "category": "place",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "嫉妒",
+    "date_added": "2026-07-07",
+    "category": "emotion",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "冰雹",
+    "date_added": "2026-07-07",
+    "category": "nature",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "果汁",
+    "date_added": "2026-07-07",
+    "category": "food",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "海鸥",
+    "date_added": "2026-07-07",
+    "category": "animal",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "脊背",
+    "date_added": "2026-07-07",
+    "category": "body",
+    "seen_count": 2,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "监狱",
+    "date_added": "2026-07-07",
+    "category": "place",
+    "seen_count": 2,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "喜爱",
+    "date_added": "2026-07-07",
+    "category": "emotion",
+    "seen_count": 2,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "阳光",
+    "date_added": "2026-07-07",
+    "category": "nature",
+    "seen_count": 2,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "地图",
+    "date_added": "2026-07-07",
+    "category": "object",
+    "seen_count": 2,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "奔波",
+    "date_added": "2026-07-07",
+    "category": "action",
+    "seen_count": 2,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "海龟",
+    "date_added": "2026-07-07",
+    "category": "animal",
+    "seen_count": 2,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "规则",
+    "date_added": "2026-07-07",
+    "category": "concept",
+    "seen_count": 2,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "下午",
+    "date_added": "2026-07-08",
+    "category": "time",
     "seen_count": 1,
     "weak": false,
     "weak_date": null

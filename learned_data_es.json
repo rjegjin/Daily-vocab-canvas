@@ -691,7 +691,7 @@
     "word": "Tortuga",
     "date_added": "2026-04-23",
     "category": "animal",
-    "seen_count": 1,
+    "seen_count": 2,
     "weak": false,
     "weak_date": null
   },
@@ -891,7 +891,7 @@
     "word": "Catarata",
     "date_added": "2026-04-27",
     "category": "nature",
-    "seen_count": 1,
+    "seen_count": 2,
     "weak": false,
     "weak_date": null
   },
@@ -1067,7 +1067,7 @@
     "word": "anhelo",
     "date_added": "2026-05-01",
     "category": "emotion",
-    "seen_count": 2,
+    "seen_count": 3,
     "weak": false,
     "weak_date": null
   },
@@ -1131,7 +1131,7 @@
     "word": "museo",
     "date_added": "2026-05-01",
     "category": "place",
-    "seen_count": 2,
+    "seen_count": 3,
     "weak": false,
     "weak_date": null
   },
@@ -1586,6 +1586,262 @@
   {
     "word": "Puente",
     "date_added": "2026-06-02",
+    "category": "place",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "ancla",
+    "date_added": "2026-07-06",
+    "category": "object",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "burbuja",
+    "date_added": "2026-07-06",
+    "category": "nature",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "estornudo",
+    "date_added": "2026-07-06",
+    "category": "action",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "melena",
+    "date_added": "2026-07-06",
+    "category": "body",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "fresa",
+    "date_added": "2026-07-06",
+    "category": "food",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "cautela",
+    "date_added": "2026-07-06",
+    "category": "concept",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "lince",
+    "date_added": "2026-07-06",
+    "category": "animal",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "angustia",
+    "date_added": "2026-07-06",
+    "category": "emotion",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "sótano",
+    "date_added": "2026-07-06",
+    "category": "place",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "brújula",
+    "date_added": "2026-07-07",
+    "category": "object",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "glaciar",
+    "date_added": "2026-07-07",
+    "category": "nature",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "teclear",
+    "date_added": "2026-07-07",
+    "category": "action",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "espinaca",
+    "date_added": "2026-07-07",
+    "category": "food",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "halcón",
+    "date_added": "2026-07-07",
+    "category": "animal",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "tobillo",
+    "date_added": "2026-07-07",
+    "category": "body",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "mañana",
+    "date_added": "2026-07-07",
+    "category": "time",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "Aliento",
+    "date_added": "2026-07-07",
+    "category": "body",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "Cosecha",
+    "date_added": "2026-07-07",
+    "category": "concept",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "Escalera",
+    "date_added": "2026-07-07",
+    "category": "object",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "Hielo",
+    "date_added": "2026-07-07",
+    "category": "nature",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "Igualdad",
+    "date_added": "2026-07-07",
+    "category": "concept",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "Jugar",
+    "date_added": "2026-07-07",
+    "category": "action",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "Martillo",
+    "date_added": "2026-07-07",
+    "category": "object",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "Pastel",
+    "date_added": "2026-07-07",
+    "category": "food",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "Zorro",
+    "date_added": "2026-07-07",
+    "category": "animal",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "Impulso",
+    "date_added": "2026-07-08",
+    "category": "concept",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "Aceite",
+    "date_added": "2026-07-08",
+    "category": "food",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "Pulsera",
+    "date_added": "2026-07-08",
+    "category": "object",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "Pintar",
+    "date_added": "2026-07-08",
+    "category": "action",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "Cobarde",
+    "date_added": "2026-07-08",
+    "category": "emotion",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "Melena",
+    "date_added": "2026-07-08",
+    "category": "body",
+    "seen_count": 1,
+    "weak": false,
+    "weak_date": null
+  },
+  {
+    "word": "Bodega",
+    "date_added": "2026-07-08",
     "category": "place",
     "seen_count": 1,
     "weak": false,

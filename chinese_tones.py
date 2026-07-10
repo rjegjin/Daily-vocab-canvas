@@ -6,7 +6,7 @@ import os
 import json
 from datetime import datetime
 from dotenv import load_dotenv
-from card_engine import generate_tts, send_audio_to_telegram, send_text_to_telegram, generate_tone_chart, send_to_telegram
+from card_engine import generate_tts, send_audio_to_telegram, send_text_to_telegram
 from vocab_feedback import (
     load_supplement_seen,
     load_supplement_weak,
@@ -172,13 +172,6 @@ if __name__ == "__main__":
     merge_supplement_items("zh_tones", [tone_item])
     save_latest_supplement("zh_tones", [tone_item])
     send_supplement_feedback_buttons("zh_tones")
-
-    # 성조 곡선 이미지 생성 및 전송
-    tone_chart_path = os.path.join(PROJECT_DIR, "tone_chart.png")
-    if generate_tone_chart(tone_chart_path):
-        send_to_telegram(tone_chart_path, TOKEN, CHAT_ID)
-        if os.path.exists(tone_chart_path):
-            os.remove(tone_chart_path)
 
     # 각 단어별 음성 생성 및 전송 (처음 3개만)
     for i, (char, pinyin, meaning, example, _) in enumerate(selected_words[:3]):

@@ -1,0 +1,189 @@
+[
+  {
+    "date": "2026-06-08",
+    "domain": "workplace",
+    "scenario_ko": "업무 회의 도중 상사가 당신에게 의견을 물어볼 때, 정중하면서도 자신 있게 자신의 생각을 제안하는 상황입니다.",
+    "target_expressions": [
+      "I’m of the opinion that...",
+      "Given the current workload...",
+      "I’d suggest focusing on..."
+    ],
+    "tts_sent": true
+  },
+  {
+    "date": "2026-06-09",
+    "domain": "social",
+    "scenario_ko": "친구와 일상적으로 커피숍에서 만나는 상황",
+    "target_expressions": [
+      "Long time no see!",
+      "How have you been?",
+      "We should do this again soon."
+    ],
+    "tts_sent": true
+  },
+  {
+    "date": "2026-06-09",
+    "domain": "service",
+    "scenario_ko": "커피숍에서 주문을 하고 결제하는 상황",
+    "target_expressions": [
+      "Could I get a small latte, please?",
+      "Could I pay by card?",
+      "Thank you!"
+    ],
+    "tts_sent": false
+  },
+  {
+    "date": "2026-06-10",
+    "domain": "travel",
+    "scenario_ko": "호텔에서 체크인하는 상황에서 필요한 질문과 답변을 연습한다.",
+    "target_expressions": [
+      "Could I get a wake-up call?",
+      "Is breakfast included?",
+      "Where is the nearest ATM?"
+    ],
+    "tts_sent": false
+  },
+  {
+    "date": "2026-06-12",
+    "domain": "workplace",
+    "scenario_ko": "상사가 새 프로젝트의 초기 회의를 주도하는 상황에서 동료와 의논하기",
+    "target_expressions": [
+      "Let's run through the plan.",
+      "What are your thoughts?",
+      "We should finalize the details."
+    ],
+    "tts_sent": false
+  },
+  {
+    "date": "2026-06-13",
+    "domain": "social",
+    "scenario_ko": "친구와 함께 카페에서 만나는 상황",
+    "target_expressions": [
+      "Long time no see!",
+      "How have you been?",
+      "What’s new with you?"
+    ],
+    "tts_sent": false
+  },
+  {
+    "date": "2026-06-14",
+    "domain": "service",
+    "scenario_ko": "카페에서 주문하고 결제하는 상황",
+    "target_expressions": [
+      "Could I get a coffee, please?",
+      "How much is it?",
+      "Can I pay by card?"
+    ],
+    "tts_sent": false
+  },
+  {
+    "date": "2026-06-15",
+    "domain": "travel",
+    "scenario_ko": "여행 중에 교통편을 묻는 상황에서 현지인과 자연스럽게 대화하는 연습",
+    "target_expressions": [
+      "Could you tell me how to get to the train station?",
+      "Is it far from here?",
+      "Thank you so much for your help."
+    ],
+    "tts_sent": false
+  },
+  {
+    "date": "2026-06-16",
+    "domain": "workplace",
+    "scenario_ko": "팀 회의 중에 새로운 프로젝트 아이디어를 제안하는 상황",
+    "target_expressions": [
+      "I have an idea that might work.",
+      "What do you think about...?",
+      "Let's consider implementing this."
+    ],
+    "tts_sent": false
+  },
+  {
+    "date": "2026-06-17",
+    "domain": "social",
+    "scenario_ko": "길거리에서 우연히 아는 사람을 만났을 때 인사하고 대화하는 상황",
+    "target_expressions": [
+      "Long time no see!",
+      "How have you been?",
+      "It's great to see you!"
+    ],
+    "tts_sent": false
+  },
+  {
+    "date": "2026-06-18",
+    "domain": "service",
+    "scenario_ko": "커피숍에서 주문하고 결제하는 상황",
+    "target_expressions": [
+      "Could I get a...?",
+      "How much is it?",
+      "Here you go."
+    ],
+    "tts_sent": false
+  },
+  {
+    "date": "2026-06-19",
+    "domain": "travel",
+    "scenario_ko": "공항에서 택시를 잡아 호텔로 가는 상황",
+    "target_expressions": [
+      "Can you take me to the Hotel Riverside, please?",
+      "How long will the ride take?",
+      "Could you turn on the air conditioning?"
+    ],
+    "tts_sent": false
+  },
+  {
+    "date": "2026-06-20",
+    "domain": "workplace",
+    "scenario_ko": "팀 회의에서 프로젝트 진행 상황을 보고하는 상황",
+    "target_expressions": [
+      "We're making good progress.",
+      "We're facing some challenges with timing.",
+      "We'll need to collaborate more closely."
+    ],
+    "tts_sent": false
+  },
+  {
+    "date": "2026-07-06",
+    "domain": "social",
+    "scenario_ko": "주말에 동네 단골 카페에 갔는데, 평소에 자주 마주치던 카페 단골 손님과 처음으로 자연스럽게 대화를 시작하는 상황입니다.",
+    "target_expressions": [
+      "I couldn't help but notice...",
+      "I've seen you here a few times.",
+      "Do you come here often?"
+    ],
+    "tts_sent": false
+  },
+  {
+    "date": "2026-07-06",
+    "domain": "Service (Tech Support/In-home Repair)",
+    "scenario_ko": "집에 있는 스마트 도어락이 고장 나서 수리 기사님에게 연락해 방문 예약을 잡는 상황입니다.",
+    "target_expressions": [
+      "My door lock is acting up.",
+      "Are you available for a service call?",
+      "Does that time work for you?"
+    ],
+    "tts_sent": false
+  },
+  {
+    "date": "2026-07-07",
+    "domain": "service",
+    "scenario_ko": "커피숍에서 주문한 음료가 생각했던 것과 다르게 나왔을 때, 정중하게 확인하고 수정 요청하기.",
+    "target_expressions": [
+      "Sorry to bother you, but...",
+      "I think there might be a mix-up.",
+      "Would it be possible to..."
+    ],
+    "tts_sent": false
+  },
+  {
+    "date": "2026-07-08",
+    "domain": "workplace",
+    "scenario_ko": "점심시간이 끝난 후, 팀원과 함께 사무실로 돌아가면서 오후 업무 계획을 가볍게 이야기하는 상황입니다.",
+    "target_expressions": [
+      "Get back to the grind",
+      "Wrap up",
+      "On my plate"
+    ],
+    "tts_sent": false
+  }
+]
