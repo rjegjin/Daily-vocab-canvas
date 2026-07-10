@@ -1,7 +1,10 @@
 import asyncio
+import os
+from datetime import datetime
+from pathlib import Path
 
 from telegram import ReplyKeyboardMarkup
-from telegram.ext import CommandHandler
+from telegram.ext import CommandHandler, MessageHandler, filters
 
 from bot_runtime import (
     IKB,
@@ -23,6 +26,9 @@ from bot_runtime import (
     send_writing_feedback,
     stats_summary,
 )
+from english_speaking import start_speaking_session, start_shadowing_session, handle_voice_message, finalize_session
+
+PROJECT_DIR = Path(__file__).resolve().parent
 
 TOKEN_ENVS = ("ENGLISH_BOT_TOKEN", "EN_BOT_TOKEN")
 CHAT_ENVS = ("ENGLISH_CHAT_ID", "EN_CHAT_ID")
@@ -37,6 +43,8 @@ def menu_inline():
         [IKB("EN 단어", callback_data="run:en_vocab"), IKB("EN 표현", callback_data="run:en_phrase")],
         [IKB("EN 회화", callback_data="run:en_dialogue"), IKB("EN 글쓰기", callback_data="run:en_writing")],
         [IKB("EN 오늘 전체", callback_data="run:english_daily")],
+        [IKB("🎙️ EN 말하기", callback_data="en:speaking:start"), IKB("🗣️ 따라 읽기", callback_data="en:speaking:shadow")],
+        [IKB("⏹ 세션 종료", callback_data="en:speaking:end")],
         [IKB("통계", callback_data="info:stats"), IKB("비용", callback_data="info:cost")],
     ])
 
@@ -45,6 +53,7 @@ def menu_reply():
     return ReplyKeyboardMarkup([
         ["EN 단어", "EN 표현", "EN 회화"],
         ["EN 글쓰기", "EN 오늘 전체"],
+        ["🎙️ EN 말하기", "🗣️ 따라 읽기", "⏹ 세션 종료"],
         ["통계", "비용"],
     ], resize_keyboard=True)
 
@@ -87,6 +96,48 @@ async def cmd_writing_feedback(update, context):
     await asyncio.to_thread(send_writing_feedback, text)
 
 
+async def handle_voice(update, context):
+    """Handle voice messages for speaking sessions."""
+    voice = update.message.voice
+    if not voice:
+        return
+    duration_sec = voice.duration or 0
+    file_path = None
+    try:
+        # Download voice with retry logic (1 retry)
+        file_path = os.path.join(str(PROJECT_DIR), f"voice_{int(datetime.now().timestamp())}.ogg")
+        try:
+            file = await voice.get_file()
+            await file.download_to_drive(file_path)
+        except Exception:
+            # Retry once
+            try:
+                file = await voice.get_file()
+                await file.download_to_drive(file_path)
+            except Exception:
+                await update.message.reply_text("❌ 음성 다운로드 실패. 텍스트로 답장해 주세요.")
+                return
+
+        success, user_text, audio_path_response, message = await asyncio.to_thread(
+            handle_voice_message, file_path, duration_sec
+        )
+
+        if success:
+            await update.message.reply_text(f"👤 당신: {user_text}\n\n🤖 봇: {message}")
+            if audio_path_response and os.path.exists(audio_path_response):
+                await update.message.reply_voice(voice=open(audio_path_response, 'rb'), caption="🎤 봇 응답")
+                os.remove(audio_path_response)
+        else:
+            await update.message.reply_text(message)
+
+        if file_path and os.path.exists(file_path):
+            os.remove(file_path)
+    except Exception as e:
+        await update.message.reply_text(f"❌ 음성 처리 실패: {e}")
+        if file_path and os.path.exists(file_path):
+            os.remove(file_path)
+
+
 async def handle_callback(update, context):
     query = update.callback_query
     await query.answer()
@@ -115,6 +166,24 @@ async def handle_callback(update, context):
             await query.message.reply_text("어려움으로 기록했습니다.")
         elif kind == "dialogue" and action == "ok":
             await query.message.reply_text("자신 있음으로 기록했습니다.")
+        elif kind == "speaking" and action == "start":
+            success, bot_utterance, audio_path, guide_message = await asyncio.to_thread(start_speaking_session)
+            if success:
+                await query.message.reply_text(guide_message, parse_mode="Markdown")
+                if audio_path and os.path.exists(audio_path):
+                    await query.message.reply_voice(voice=open(audio_path, 'rb'), caption="🎤 봇 발화 — 답해주세요")
+                    os.remove(audio_path)
+                await query.message.reply_text(f"🤖 봇: {bot_utterance}")
+            else:
+                await query.message.reply_text(guide_message)
+        elif kind == "speaking" and action == "shadow":
+            success, guide_message = await asyncio.to_thread(start_shadowing_session)
+            await query.message.reply_text(guide_message)
+        elif kind == "speaking" and action == "end":
+            feedback_message = await asyncio.to_thread(finalize_session)
+            # finalize_session returns (turns_data, feedback_message)
+            _, feedback_text = feedback_message if isinstance(feedback_message, tuple) else (None, feedback_message)
+            await query.message.reply_text(feedback_text, parse_mode="Markdown")
     elif data == "info:stats":
         await query.edit_message_text(await asyncio.to_thread(stats_summary), reply_markup=menu_inline())
     elif data == "info:cost":
@@ -139,5 +208,8 @@ if __name__ == "__main__":
         handle_text=handle_text,
         handle_callback=handle_callback,
         post_init=post_init,
-        extra_handlers=[CommandHandler("writing_feedback", cmd_writing_feedback)],
+        extra_handlers=[
+            CommandHandler("writing_feedback", cmd_writing_feedback),
+            MessageHandler(filters.VOICE, handle_voice),
+        ],
     )
