@@ -1,6 +1,6 @@
 # Fluency System Status
 
-작성일: 2026-06-09
+작성일: 2026-07-14
 
 이 문서는 현재 구현된 기능, 설계되었지만 아직 구현되지 않은 기능, 운영상 이슈를 명확히 구분한다.
 
@@ -17,9 +17,11 @@
 
 기능:
 - OpenAI 저가 텍스트 모델로 단어 9개 JSON 생성
-- OpenAI 저가 이미지 모델로 3x3 icon sheet 1장 생성
+- OpenAI 이미지 모델로 3-icon sheet 3장 생성
+- 빈칸/과도한 sheet artifact 품질 검사 및 visual/model/quality 기반 cache versioning
 - `create_flashcard()`로 3x3 이미지 카드 생성
-- Telegram photo 전송
+- 아이콘 9개가 완전하지 않으면 합성·전송·학습 이력 저장 중단
+- Telegram PNG document 전송 (`VOCAB_TELEGRAM_SEND_MODE=photo`로 호환 가능)
 - `learned_data_es.json`, `learned_data_ja.json`, `learned_data_zh.json`에 학습 이력 저장
 - weak 단어를 다음 생성 prompt에 복습 후보로 포함
 
@@ -27,16 +29,16 @@
 - 그림 카드 기능은 삭제되지 않았다.
 - 2026-06-09부터 기본 provider를 OpenAI 저가형으로 전환했다.
 - 기본 텍스트 모델: `gpt-4.1-nano`
-- 기본 이미지 모델: `gpt-image-1-mini`, quality `low`
+- 기본 이미지 모델: `gpt-image-1-mini`, quality `medium`
 - 기존 Gemini/Imagen 경로는 환경변수로 되돌릴 수 있다.
 
 비용 추정:
-- 실제 스페인어 시험 실행 기준:
+- 기존 text 비용 측정치와 2026-07-14 공식 image 단가 기준:
   - text: 약 `$0.000322`
-  - image: `$0.005`
-  - 합계: 약 `$0.005322` / 언어 / 1회
+  - image: `$0.033` (`$0.011` × 3 sheets)
+  - 합계: 약 `$0.033322` / 언어 / 1회
 - ES/JA/ZH 매일 1회씩 30일 실행 시:
-  - 약 `$0.48` / 월
+  - 약 `$3.00` / 월
   - JA/ZH vocab TTS는 Google TTS 무료 1M chars 이내면 추가 비용 없음
 
 ### English fluency

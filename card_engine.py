@@ -120,17 +120,17 @@ _ICON_CACHE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'icon
 _SERVICE_ACCOUNT_JSON_ENV = "GOOGLE_SERVICE_ACCOUNT_JSON"
 _OPENAI_TEXT_MODEL_DEFAULT = "gpt-4.1-nano"
 _OPENAI_IMAGE_MODEL_DEFAULT = "gpt-image-1-mini"
-_OPENAI_IMAGE_QUALITY_DEFAULT = "low"
+_OPENAI_IMAGE_QUALITY_DEFAULT = "medium"
+_ICON_CACHE_VERSION = "v2"
 
 _OPENAI_TEXT_PRICE = {
     "input": 0.10,
     "output": 0.40,
 }
-_OPENAI_IMAGE_PRICE_LOW_1024 = {
-    "gpt-image-1-mini": 0.005,
-    "gpt-image-1": 0.011,
-    "gpt-image-1.5": 0.009,
-    "gpt-image-2": 0.006,
+_OPENAI_IMAGE_PRICE_1024 = {
+    "gpt-image-1-mini": {"low": 0.005, "medium": 0.011, "high": 0.036},
+    "gpt-image-1": {"low": 0.011, "medium": 0.042, "high": 0.167},
+    "gpt-image-1.5": {"low": 0.009, "medium": 0.034, "high": 0.133},
 }
 
 def _service_account_path() -> str:
@@ -432,27 +432,44 @@ Return a JSON object with exactly one key "items".
     return data, in_tokens, out_tokens
 
 # -------------------------------------------------------------------
-# 아이콘 생성 (Imagen 4 Fast 3x3 sheet via Vertex AI)
+# 아이콘 생성 (provider별 3-icon sheet)
 # -------------------------------------------------------------------
-def _icon_cache_path(lang: str, word: str) -> str:
+def _icon_cache_path(lang: str, word: str, concept: str = "",
+                     provider: str = "", model: str = "", quality: str = "") -> str:
     os.makedirs(_ICON_CACHE_DIR, exist_ok=True)
-    digest = hashlib.sha1(f"{lang}:{word}".encode("utf-8")).hexdigest()[:16]
+    cache_identity = json.dumps(
+        {
+            "version": _ICON_CACHE_VERSION,
+            "lang": lang,
+            "word": word.strip().casefold(),
+            "concept": concept.strip().casefold(),
+            "provider": provider.strip().casefold(),
+            "model": model.strip().casefold(),
+            "quality": quality.strip().casefold(),
+        },
+        ensure_ascii=False,
+        sort_keys=True,
+    )
+    digest = hashlib.sha1(cache_identity.encode("utf-8")).hexdigest()[:20]
     return os.path.join(_ICON_CACHE_DIR, f"{lang}_{digest}.png")
 
-def _load_cached_icon(lang: str, word: str):
-    path = _icon_cache_path(lang, word)
+def _load_cached_icon(lang: str, word: str, concept: str = "",
+                      provider: str = "", model: str = "", quality: str = ""):
+    path = _icon_cache_path(lang, word, concept, provider, model, quality)
     if not os.path.exists(path):
         return None
     try:
         icon = Image.open(path).convert("RGBA").resize((ICON_H, ICON_H), Image.LANCZOS)
-        return _remove_sheet_artifacts(icon)
+        icon = _remove_sheet_artifacts(icon)
+        return icon if _is_icon_usable(icon) else None
     except Exception as e:
         print(f"  ⚠️ 캐시 로드 실패 '{word}': {e}")
         return None
 
-def _save_cached_icon(lang: str, word: str, icon: Image.Image):
+def _save_cached_icon(lang: str, word: str, icon: Image.Image, concept: str = "",
+                      provider: str = "", model: str = "", quality: str = ""):
     try:
-        icon.save(_icon_cache_path(lang, word), "PNG")
+        icon.save(_icon_cache_path(lang, word, concept, provider, model, quality), "PNG")
     except Exception as e:
         print(f"  ⚠️ 캐시 저장 실패 '{word}': {e}")
 
@@ -486,26 +503,6 @@ Important:
 - No borders, no panels, no drop shadows, no perspective.
 """
 
-def _build_grid_prompt(concepts, lang_hint: str) -> str:
-    concept_lines = "\n".join(f"{idx + 1}. {concept}" for idx, concept in enumerate(concepts))
-    return f"""
-Create one square image containing exactly 9 large minimalist flat pictogram icons for vocabulary flashcards.
-Arrange them in a clean 3x3 grid in reading order, matching these visual concepts:
-{concept_lines}
-
-Important:
-- Draw only pictures of the visual concepts.
-- The final image must contain pictures only.
-- No text, no letters, no numbers, no labels, no captions, no signs, no watermarks, no writing systems.
-- No visible grid lines, divider lines, dashed guide lines, crop marks, frames, or panels.
-- Use nine equal invisible cells, one icon per cell.
-- Each icon should be large, centered, isolated, and easy to recognize after cropping.
-- If a concept is abstract, use a simple object metaphor instead of writing a word.
-- Leave wide empty white margins around each icon and near cell boundaries.
-- Pure white background, soft pastel colors, clean educational flashcard style.
-- No borders, no drop shadows, no perspective.
-"""
-
 def generate_icon_sheet_imagen(concepts, lang_hint=""):
     prompt = _build_sheet_prompt(concepts, lang_hint)
     delays = [0, 8, 20]
@@ -535,7 +532,7 @@ def generate_icon_sheet_imagen(concepts, lang_hint=""):
 def generate_icon_sheet_openai(concepts, lang_hint=""):
     from openai import OpenAI
 
-    prompt = _build_grid_prompt(concepts, lang_hint)
+    prompt = _build_sheet_prompt(concepts, lang_hint)
     model = os.getenv("VOCAB_OPENAI_IMAGE_MODEL", _OPENAI_IMAGE_MODEL_DEFAULT)
     quality = os.getenv("VOCAB_OPENAI_IMAGE_QUALITY", _OPENAI_IMAGE_QUALITY_DEFAULT)
     try:
@@ -666,6 +663,26 @@ def _fit_icon_content(icon: Image.Image) -> Image.Image:
     crop.paste(img.crop(src_box), (paste_x, paste_y))
     return crop.resize((ICON_H, ICON_H), Image.LANCZOS)
 
+def _is_icon_usable(icon: Image.Image) -> bool:
+    """빈칸, 지나치게 작은 그림, 셀 전체를 덮은 sheet artifact를 거른다."""
+    if icon is None:
+        return False
+    img = icon.convert("RGBA").resize((ICON_H, ICON_H), Image.LANCZOS)
+    content = []
+    for y in range(ICON_H):
+        for x in range(ICON_H):
+            r, g, b, a = img.getpixel((x, y))
+            if a > 20 and min(r, g, b) < 245:
+                content.append((x, y))
+
+    coverage = len(content) / (ICON_H * ICON_H)
+    if coverage < 0.01 or coverage > 0.75:
+        return False
+
+    xs = [x for x, _ in content]
+    ys = [y for _, y in content]
+    return (max(xs) - min(xs) >= 8) and (max(ys) - min(ys) >= 8)
+
 def generate_icons(client, vocab_data, lang, lang_hint="",
                    txt_in_tokens=0, txt_out_tokens=0):
     """
@@ -682,20 +699,45 @@ def generate_icons_openai(vocab_data, lang, lang_hint=""):
     concepts = [_icon_concept(item) for item in vocab_data]
     model = os.getenv("VOCAB_OPENAI_IMAGE_MODEL", _OPENAI_IMAGE_MODEL_DEFAULT)
     quality = os.getenv("VOCAB_OPENAI_IMAGE_QUALITY", _OPENAI_IMAGE_QUALITY_DEFAULT)
-    print(f"🎨 {model}({quality})로 3x3 icon sheet 1장을 생성 중...")
+    print(f"🎨 {model}({quality})로 3-icon sheet 3장을 생성 중...")
 
-    sheet = generate_icon_sheet_openai(concepts, lang_hint)
     icons = []
     billable_images = 0
-    if sheet:
-        icons = split_icon_sheet(sheet, len(words))
-        for word, icon in zip(words, icons):
-            _save_cached_icon(lang, word, icon)
-        billable_images = 1
-        print(f"🎨 OpenAI 3x3 sheet 생성 완료 → 아이콘 {len(icons)}개 crop")
-    else:
-        print("⚠️ OpenAI sheet 생성 실패, 기존 아이콘 캐시를 사용합니다.")
-        icons = [_load_cached_icon(lang, word) for word in words]
+    for batch_start in range(0, len(words), GRID):
+        batch_words = words[batch_start:batch_start + GRID]
+        batch_concepts = concepts[batch_start:batch_start + GRID]
+        sheet = generate_icon_sheet_openai(batch_concepts, lang_hint)
+        batch_icons = []
+
+        if sheet:
+            billable_images += 1
+            generated = split_icon_sheet(sheet, len(batch_words))
+            for word, concept, icon in zip(batch_words, batch_concepts, generated):
+                if _is_icon_usable(icon):
+                    _save_cached_icon(
+                        lang, word, icon, concept, "openai", model, quality
+                    )
+                    batch_icons.append(icon)
+                else:
+                    print(f"  ⚠️ 품질 검사 실패 '{word}', 동일 설정 캐시 확인")
+                    batch_icons.append(_load_cached_icon(
+                        lang, word, concept, "openai", model, quality
+                    ))
+            print(
+                f"🎨 OpenAI sheet 생성 완료: {batch_start // GRID + 1}/3 "
+                f"→ 아이콘 {len(batch_icons)}개 crop"
+            )
+        else:
+            print(
+                f"⚠️ OpenAI sheet 생성 실패: {batch_start // GRID + 1}/3, "
+                "동일 설정 캐시를 사용합니다."
+            )
+            batch_icons = [
+                _load_cached_icon(lang, word, concept, "openai", model, quality)
+                for word, concept in zip(batch_words, batch_concepts)
+            ]
+
+        icons.extend(batch_icons)
 
     success = sum(1 for ic in icons if ic is not None)
     for idx, word in enumerate(words):
@@ -703,11 +745,11 @@ def generate_icons_openai(vocab_data, lang, lang_hint=""):
 
     print(f"🎨 아이콘 준비 완료: {success}/{len(words)}개 사용 가능")
     if billable_images:
-        image_cost = _OPENAI_IMAGE_PRICE_LOW_1024.get(model, 0.005)
+        image_cost = _OPENAI_IMAGE_PRICE_1024.get(model, {}).get(quality, 0.011)
         log_provider_cost(
             lang,
             "openai_image",
-            image_cost,
+            image_cost * billable_images,
             model=model,
             quality=quality,
             img_count=billable_images,
@@ -729,15 +771,27 @@ def generate_icons_imagen(client, vocab_data, lang, lang_hint="",
         sheet = generate_icon_sheet_imagen(batch_concepts, lang_hint)
 
         if sheet:
-            batch_icons = split_icon_sheet(sheet, len(batch_words))
-            for word, icon in zip(batch_words, batch_icons):
-                _save_cached_icon(lang, word, icon)
+            generated = split_icon_sheet(sheet, len(batch_words))
+            batch_icons = []
+            for word, concept, icon in zip(batch_words, batch_concepts, generated):
+                if _is_icon_usable(icon):
+                    _save_cached_icon(
+                        lang, word, icon, concept, "imagen", _IMAGEN_MODEL, "default"
+                    )
+                    batch_icons.append(icon)
+                else:
+                    batch_icons.append(_load_cached_icon(
+                        lang, word, concept, "imagen", _IMAGEN_MODEL, "default"
+                    ))
             icons.extend(batch_icons)
             billable_images += 1
             print(f"🎨 sheet 생성 완료: {batch_start // GRID + 1}/3 → 아이콘 {len(batch_icons)}개 crop")
         else:
             print(f"⚠️ sheet 생성 실패: {batch_start // GRID + 1}/3, 기존 아이콘 캐시를 사용합니다.")
-            icons.extend([_load_cached_icon(lang, word) for word in batch_words])
+            icons.extend([
+                _load_cached_icon(lang, word, concept, "imagen", _IMAGEN_MODEL, "default")
+                for word, concept in zip(batch_words, batch_concepts)
+            ])
 
     success = sum(1 for ic in icons if ic is not None)
     for idx, word in enumerate(words):
@@ -752,6 +806,13 @@ def generate_icons_imagen(client, vocab_data, lang, lang_hint="",
 # -------------------------------------------------------------------
 def create_flashcard(icons, vocab_data, fields_fn, fonts, output_path, theme='default'):
     print("🖋️ 플래시카드 합성 중...")
+    if len(icons) != len(vocab_data) or any(icon is None for icon in icons):
+        available = sum(icon is not None for icon in icons)
+        print(
+            f"⛔ 아이콘이 완전하지 않아 카드 생성을 중단합니다: "
+            f"{available}/{len(vocab_data)}"
+        )
+        return None
     t = LANG_THEMES.get(theme, LANG_THEMES['default'])
     try:
         canvas = Image.new("RGB", (CARD_SIZE, CARD_SIZE), (255, 255, 255))
@@ -809,7 +870,11 @@ def create_flashcard(icons, vocab_data, fields_fn, fonts, output_path, theme='de
 # -------------------------------------------------------------------
 def send_to_telegram(image_path, token, chat_id):
     print("📤 텔레그램으로 전송 중...")
-    url = f"https://api.telegram.org/bot{token}/sendPhoto"
+    send_mode = os.getenv("VOCAB_TELEGRAM_SEND_MODE", "document").lower()
+    as_document = send_mode != "photo"
+    method = "sendDocument" if as_document else "sendPhoto"
+    file_field = "document" if as_document else "photo"
+    url = f"https://api.telegram.org/bot{token}/{method}"
 
     class IPAdapter(requests.adapters.HTTPAdapter):
         def send(self, request, **kwargs):
@@ -830,14 +895,21 @@ def send_to_telegram(image_path, token, chat_id):
         }
 
     try:
-        with open(image_path, 'rb') as photo:
-            result = session.post(url, data={'chat_id': chat_id}, files={'photo': photo}).json()
+        with open(image_path, 'rb') as image_file:
+            result = session.post(
+                url,
+                data={'chat_id': chat_id},
+                files={file_field: image_file},
+            ).json()
         if result.get("ok"):
             print(f"[{datetime.now()}] 🚀 카드를 성공적으로 보냈습니다!")
+            return True
         else:
             print(f"❌ 전송 실패: {result}")
+            return False
     except Exception as e:
         print(f"❌ 전송 오류: {e}")
+        return False
 
 # -------------------------------------------------------------------
 # Google Text-to-Speech (음성 생성)

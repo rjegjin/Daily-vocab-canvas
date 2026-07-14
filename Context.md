@@ -1,5 +1,14 @@
 # Project Context
 
+## 2026-07-14 Image Quality Guard
+
+- OpenAI image 기본값을 `gpt-image-1-mini` medium으로 올리고 9-in-1 sheet를 3-in-1 sheet 3장으로 분리했다.
+- icon cache key에 visual/provider/model/quality/version을 포함해 잘못된 구형 cache의 무기한 재사용을 막았다.
+- 아이콘 9개가 완전하지 않으면 카드 합성과 Telegram 발송을 중단한다.
+- 정상 카드는 Telegram document로 보내 PNG 원본을 보존한다 (`VOCAB_TELEGRAM_SEND_MODE=photo`로 override 가능).
+- 운영의 기존 `.env` low 설정은 `systemd/vocab-image-quality.conf` service drop-in으로 안전하게 override한다.
+- OpenAI billing hard limit은 별도 운영 이슈로 남아 있으며, 이번 변경은 API 호출 없이 mock test로 검증했다.
+
 - Checked on 2026-06-17.
 - No staged Git changes were present at the time of creation.
 - The working tree already had modified, deleted, and untracked files.
