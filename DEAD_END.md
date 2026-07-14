@@ -7,6 +7,7 @@
 - 2026-07-14: secret-presence 확인용으로 shell 안에 복잡한 `awk` quoting을 중첩하자 zsh parse error가 발생했다. 다음에는 key 값을 읽지 않는 단순한 `test`/단일 `awk` 조건으로 존재 여부만 확인한다.
 - 2026-07-14: `Daily_Vocab_Card_Bot`를 cwd로 지정한 뒤 `rg Daily_Vocab_Card_Bot/...` 경로를 다시 붙여 IO error가 발생했다. 다음에는 command의 `workdir`와 상대 경로 기준을 먼저 맞춘다.
 - 2026-07-14: `rsync systemd/ remote:project/`가 디렉터리 내부 파일을 remote project root에 펼쳤다. 다음에는 remote의 `project/systemd/`를 명시해 하위 구조를 보존한다.
+- 2026-07-14: 운영 `unified_venv`에는 `pytest`가 없어 원격 test runner 실행이 실패했다. dependency를 즉흥 설치하지 말고 로컬 pytest + 원격 `py_compile`/stdlib mock smoke check로 검증한다.
 
 - Do not assume Gemini / Imagen is currently the only or default provider. Older docs say that, but `FLUENCY_STATUS.md` records a 2026-06-09 switch to lower-cost OpenAI text/image providers.
 - Do not retry the old Gemini-only path without checking billing/API key state. Prior failure was `429 RESOURCE_EXHAUSTED` with prepayment credits depleted; the workaround was switching default vocab card generation to OpenAI.
