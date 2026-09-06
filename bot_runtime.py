@@ -324,6 +324,11 @@ def run_polling_bot(
     extra_handlers=None,
 ):
     logging.basicConfig(format="%(asctime)s [%(levelname)s] %(message)s", level=logging.INFO)
+    # 텔레그램은 봇 토큰을 URL 경로에 넣는다. httpx가 INFO로 요청 URL을 통째로
+    # 찍으면 journald에 토큰이 평문으로 쌓인다 — 로그를 읽을 수 있는 사람은
+    # 누구나 봇을 장악할 수 있다. 실측: 봇 하나가 6시간에 2천 줄씩 남기고 있었다.
+    for noisy in ("httpx", "httpcore", "telegram.request"):
+        logging.getLogger(noisy).setLevel(logging.WARNING)
     token = get_token(*token_envs)
     if not token:
         print(f"{bot_name}: bot token 환경 변수가 없습니다.")
